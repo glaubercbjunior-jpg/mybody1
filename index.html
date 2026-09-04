@@ -267,10 +267,15 @@
   #gate{position:fixed;inset:0;z-index:45;overflow-y:auto;background:radial-gradient(130% 60% at 50% 6%, #ffffff 0%, var(--bg) 55%);}
   #gate .center{display:flex;flex-direction:column;justify-content:center;min-height:100%;}
   .vtag{position:fixed;right:10px;bottom:calc(8px + env(safe-area-inset-bottom));font-size:10px;color:var(--faint);z-index:46;pointer-events:none;}
+  .cm-loc{display:flex;flex-wrap:wrap;gap:7px;}
+  .cm-loc button{background:var(--surf-2);border:1px solid var(--line);border-radius:999px;padding:8px 13px;font-family:inherit;font-size:12px;color:var(--txt);cursor:pointer;}
+  .cm-loc button.sel{background:var(--pink);color:#fff;border-color:var(--pink);}
+  .cta{background:linear-gradient(135deg,#ff4a40,#e10600 60%,#c40500)!important;box-shadow:0 8px 20px rgba(225,6,0,.28);}
+  .exfile{font-size:12px;color:var(--pink);cursor:pointer;background:none;border:none;font-family:inherit;padding:2px 0;}
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 10</span>
+<span class="vtag" style="z-index:80">versão 11</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -403,15 +408,6 @@
     </div>
   </div>
 
-  <!-- CONSULTAS -->
-  <div class="view" id="view-consultas">
-    <div class="center scroll">
-      <div class="topbar anim"><div class="brand"><div class="w2" style="font-size:20px">Consultas</div>
-        <div class="sub">Suas consultas médicas</div></div></div>
-      <div id="consultBody" class="anim a2"></div>
-    </div>
-  </div>
-
   <!-- CICLO -->
   <div class="view" id="view-ciclo">
     <div class="center scroll">
@@ -444,6 +440,10 @@
         <button data-p="2">Moderada</button>
         <button data-p="3">Forte</button>
       </div>
+      <div id="cmLocWrap" class="hidden">
+        <div class="cm-q">Onde dói? (toque em um ou mais)</div>
+        <div class="cm-loc" id="cmLoc"></div>
+      </div>
       <div class="cm-q">Quer anotar algo? (opcional)</div>
       <textarea class="cm-note" id="cmNote" rows="2" placeholder="Onde dói, sintomas, como foi o dia..."></textarea>
       <div class="cm-actions"><button class="cta" id="cmSave">Salvar</button></div>
@@ -475,7 +475,6 @@
     <a data-nav="historico"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3"/></svg>Evolução</a>
     <a data-nav="cond"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v2H9z"/><path d="M9 11h6M9 15h4"/></svg>Histórico</a>
     <a data-nav="exames"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-4.5 8.5A2 2 0 0 0 7.3 21h9.4a2 2 0 0 0 1.8-3.5L14 9V3"/><path d="M8 14h8"/></svg>Exames</a>
-    <a data-nav="consultas"><svg viewBox="0 0 24 24"><path d="M9 2h6v4H9zM5 6h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/><path d="M12 11v6M9 14h6"/></svg>Consultas</a>
     <a data-nav="ciclo" id="navCiclo"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16"/><path d="M12 14c.8-1.1 2.4-.5 2.4.7 0 1-1.3 1.8-2.4 2.6-1.1-.8-2.4-1.6-2.4-2.6 0-1.2 1.6-1.8 2.4-.7z"/></svg>Ciclo</a>
     <a data-nav="humor"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M19 5l-1.4 1.4M6.4 17.6L5 19"/></svg>Humor</a>
     <a data-nav="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>Perfil</a>
@@ -682,7 +681,7 @@ window.addEventListener('error',function(e){
     if(v==='splash'){el('splash').classList.remove('out','hidden');el('onb').classList.add('hidden');el('app').classList.add('hidden');return;}
     if(v==='onb'){el('onb').classList.remove('hidden');el('splash').classList.add('hidden');el('app').classList.add('hidden');var _s1=el('onbStep1'),_s2=el('onbStep2');if(_s1)_s1.classList.remove('hidden');if(_s2)_s2.classList.add('hidden');return;}
     el('splash').classList.add('hidden');el('onb').classList.add('hidden');el('app').classList.remove('hidden');
-    ['home','historico','cond','exames','consultas','ciclo','humor','perfil','avatar'].forEach(function(n){el('view-'+n).classList.toggle('active',n===v);});
+    ['home','historico','cond','exames','ciclo','humor','perfil','avatar'].forEach(function(n){el('view-'+n).classList.toggle('active',n===v);});
     var _nc=el('navCiclo');if(_nc)_nc.style.display=(profile&&profile.sexo==='Feminino')?'flex':'none';
     el('tab').style.display=(v==='avatar')?'none':'flex';
     avatarVisible=(v==='avatar');
@@ -691,7 +690,6 @@ window.addEventListener('error',function(e){
     if(v==='historico'){setTab('historico');renderHistory();}
     if(v==='cond'){setTab('cond');renderCond();}
     if(v==='exames'){setTab('exames');renderExames();}
-    if(v==='consultas'){setTab('consultas');renderConsultas();}
     if(v==='ciclo'){setTab('ciclo');renderCiclo();}
     if(v==='humor'){setTab('humor');if(!weatherNow)fetchWeather(function(w){weatherNow=w;renderMood();});renderMood();}
     if(v==='perfil'){setTab('perfil');renderPerfil();}
@@ -789,7 +787,7 @@ window.addEventListener('error',function(e){
     var P=['','leve','moderada','forte'];
     var ser=moods.slice().sort(function(a,b){return (a.ts||0)-(b.ts||0);}).slice(-24);
     el('moodStrip').innerHTML=ser.length?ser.map(function(e){var hh=e.m?(14+(e.m-1)/4*48):8;var col=e.m?moodColor(e.m):'#d3d6df';return '<div class="b"><div class="bar" style="height:'+hh.toFixed(0)+'px;background:'+col+'"></div><div class="bt">'+(e.temp!=null?e.temp+'&deg;':'·')+'</div></div>';}).join(''):'<span class="chartempty" style="padding:0">Sem registros de humor ainda. Use o check-in diário ou a aba Humor.</span>';
-    var ms=moods.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);}).slice(0,60).map(function(e){var tt=[];if(e.m)tt.push(moodLabel(e.m));if(e.pain)tt.push('dor '+P[e.pain]);if(e.temp!=null)tt.push((wText(e.code)||'clima')+' '+e.temp+'&deg;');var s2=e.note?esc(e.note):(e.cond||'');return '<div class="row"><div class="dotcol"><span class="dot" style="background:'+(e.m?moodColor(e.m):'#c9ccd6')+'"></span></div><div class="meta"><div class="t">'+(tt.join(' · ')||'Registro')+'</div><div class="sub2">'+s2+'</div></div><div class="when">'+esc(e.date||'')+'</div></div>';}).join('');
+    var ms=moods.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);}).slice(0,60).map(function(e){var tt=[];if(e.m)tt.push(moodLabel(e.m));if(e.pain)tt.push('dor '+P[e.pain]+(e.painLoc&&e.painLoc.length?' ('+e.painLoc.join(', ').toLowerCase()+')':''));if(e.temp!=null)tt.push((wText(e.code)||'clima')+' '+e.temp+'&deg;');var s2=e.note?esc(e.note):(e.cond||'');return '<div class="row"><div class="dotcol"><span class="dot" style="background:'+(e.m?moodColor(e.m):'#c9ccd6')+'"></span></div><div class="meta"><div class="t">'+(tt.join(' · ')||'Registro')+'</div><div class="sub2">'+s2+'</div></div><div class="when">'+esc(e.date||'')+'</div></div>';}).join('');
     el('moodTimeline').innerHTML=ms||'<div class="row"><div class="meta"><div class="sub2">Nenhum registro ainda.</div></div></div>';
     var tl=allEntries().map(function(e){return '<div class="row"><div class="dotcol"><span class="dot" style="background:'+HEX[e.status]+'"></span></div><div class="meta"><div class="t">'+esc(e.value)+'</div><div class="sub2">'+esc(e.fr)+'</div></div><div class="when">'+esc(e.date)+'</div></div>';}).join('');
     el('fullTimeline').innerHTML=tl||'<div class="row"><div class="meta"><div class="sub2">Nenhum registro ainda.</div></div></div>';
@@ -810,14 +808,14 @@ window.addEventListener('error',function(e){
         '<div class="box"><div class="v">'+(p.altura?esc(p.altura)+' cm':'—')+'</div><div class="l">Altura</div></div></div>'+
       '<button class="ghost" id="editProf">Editar cadastro</button>'+
       '<div class="sec"><div class="lab"><h3>Seus dados</h3></div>'+
-        '<p class="imcnote" style="margin:0 0 10px">Tudo fica salvo só neste aparelho. Faça um backup de vez em quando para não perder nada se trocar de celular ou limpar o navegador.</p>'+
+        '<p class="imcnote" style="margin:0 0 10px">Tudo fica salvo só neste aparelho. Faça um backup de vez em quando para não perder nada se trocar de celular ou limpar o navegador. (Os arquivos anexados aos exames ficam só neste aparelho e não entram no arquivo de backup.)</p>'+
         '<button class="ghost" id="expData" style="margin-top:0">Exportar backup</button>'+
         '<button class="ghost" id="impData" style="margin-top:10px">Restaurar backup</button>'+
         '<input type="file" id="impFile" accept=".json,application/json" style="display:none"></div>'+
       '';
     el('editProf').onclick=function(){prefillOnb();show('onb');el('onbTitle').textContent='Editar cadastro';};
     el('expData').onclick=function(){
-      var KEYS=['mybody_profile','mybody_systems_v1','mybody_clinical_v1','mybody_exams_v1','mybody_gyneco','mybody_mood_v1','mybody_checkin_last','mybody_onbmed','mybody_consult_v1'];
+      var KEYS=['mybody_profile','mybody_systems_v1','mybody_clinical_v1','mybody_exams_v1','mybody_gyneco','mybody_mood_v1','mybody_checkin_last','mybody_onbmed'];
       var out={_app:'MYBODY',_v:1,_date:new Date().toISOString()};
       KEYS.forEach(function(k){try{var v=localStorage.getItem(k);if(v!=null)out[k]=v;}catch(e){}});
       var blob=new Blob([JSON.stringify(out)],{type:'application/json'});
@@ -860,55 +858,56 @@ window.addEventListener('error',function(e){
   function finishMed(){try{localStorage.setItem('mybody_onbmed','1');}catch(e){}el('onbStep2').classList.add('hidden');el('onbStep1').classList.remove('hidden');show('home');maybeCheckin();}
 
   /* ---------- CONSULTAS (registro do profissional) ---------- */
-  var QKEY='mybody_consult_v1';
-  function loadConsult(){try{var r=JSON.parse(localStorage.getItem(QKEY)||'[]');return Array.isArray(r)?r:[];}catch(e){return [];}}
-  var consults=loadConsult();
-  function saveConsult(){try{localStorage.setItem(QKEY,JSON.stringify(consults));}catch(e){}}
-  function renderConsultas(){
-    var frm='<div class="sec"><div class="lab"><h3>Registrar consulta</h3></div>'+
-      '<p class="imcnote" style="margin:0 0 12px">Anote aqui as consultas que você fizer — com qualquer profissional. Assim seu histórico fica completo, tudo salvo só no seu aparelho.</p>'+
-      '<div class="cform">'+
-      '<div class="wrow"><div class="field"><label>Profissional</label><input class="input" id="qNome" placeholder="Dra. Ana Souza"></div>'+
-      '<div class="field"><label>Especialidade</label><input class="input" id="qEsp" placeholder="ex.: Cardiologia"></div></div>'+
-      '<div class="field"><label>Motivo da consulta</label><textarea class="input" id="qMot" rows="2" placeholder="Queixa, sintomas, check-up..."></textarea></div>'+
-      '<div class="field"><label>O que o profissional avaliou / diagnóstico</label><textarea class="input" id="qDx" rows="2"></textarea></div>'+
-      '<div class="field"><label>Conduta / prescrição / exames pedidos</label><textarea class="input" id="qCond" rows="2"></textarea></div>'+
-      '<div class="field"><label>Retorno marcado</label><input class="input" id="qRet" type="date"></div>'+
-      '<button class="cta" id="qSave" style="margin-top:14px">Salvar consulta</button>'+
-      '</div></div>';
-    var sorted=consults.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-    var rows=sorted.length?sorted.map(function(c){
-      var i=consults.indexOf(c);
-      function fld(k,v){return v?'<div class="cfield"><div class="k">'+k+'</div><div class="x">'+esc(v)+'</div></div>':'';}
-      return '<div class="consult"><div class="chead"><div><div class="cwho">'+esc(c.nome||'Consulta')+'</div>'+(c.esp?'<div class="cspec">'+esc(c.esp)+'</div>':'')+'</div>'+
-        '<div class="cwhen">'+esc(c.date||'')+' <button class="cdel" data-i="'+i+'" aria-label="Remover">&times;</button></div></div>'+
-        fld('Motivo',c.motivo)+fld('Avaliação',c.dx)+fld('Conduta',c.conduta)+(c.retorno?fld('Retorno',String(c.retorno).split('-').reverse().join('/')):'')+
-        '</div>';
-    }).join(''):'<div class="row"><div class="meta"><div class="sub2">Nenhuma consulta registrada ainda.</div></div></div>';
-    el('consultBody').innerHTML=frm+'<div class="sec"><div class="lab"><h3>Linha do tempo de consultas</h3></div>'+rows+'</div>';
-    el('qSave').onclick=function(){
-      var nome=el('qNome').value.trim();
-      if(!nome){el('qNome').classList.add('miss');el('qNome').focus();return;}
-      var d=new Date(),ds=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
-      consults.push({nome:nome,esp:el('qEsp').value.trim(),motivo:el('qMot').value.trim(),dx:el('qDx').value.trim(),conduta:el('qCond').value.trim(),retorno:el('qRet').value,date:ds,ts:Date.now()});
-      saveConsult();renderConsultas();try{window.scrollTo(0,0);}catch(e){}
-    };
-    [].forEach.call(el('consultBody').querySelectorAll('.cdel'),function(b){b.onclick=function(){if(confirm('Remover este registro de consulta?')){consults.splice(parseInt(b.dataset.i,10),1);saveConsult();renderConsultas();}};});
-  }
-
+  var HASIDB=typeof indexedDB!=='undefined';
+  var _fdb=null;
+  function fdb(cb){if(!HASIDB){cb(null);return;}if(_fdb){cb(_fdb);return;}try{var rq=indexedDB.open('mybody_files',1);rq.onupgradeneeded=function(){rq.result.createObjectStore('files');};rq.onsuccess=function(){_fdb=rq.result;cb(_fdb);};rq.onerror=function(){cb(null);};}catch(e){cb(null);}}
+  function putFile(key,blob,cb){fdb(function(db){if(!db){cb(false);return;}try{var tx=db.transaction('files','readwrite');tx.objectStore('files').put(blob,key);tx.oncomplete=function(){cb(true);};tx.onerror=function(){cb(false);};}catch(e){cb(false);}});}
+  function getFile(key,cb){fdb(function(db){if(!db){cb(null);return;}try{var rq=db.transaction('files').objectStore('files').get(key);rq.onsuccess=function(){cb(rq.result||null);};rq.onerror=function(){cb(null);};}catch(e){cb(null);}});}
+  function delFile(key){fdb(function(db){if(!db)return;try{db.transaction('files','readwrite').objectStore('files').delete(key);}catch(e){}});}
   function renderExames(){
     var sorted=exams.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-    var rows=sorted.length?sorted.map(function(e){var i=exams.indexOf(e);return '<div class="row"><div class="meta"><div class="t">'+esc(e.nome)+(e.resultado?' — '+esc(e.resultado):'')+'</div><div class="sub2">'+esc(e.data||'')+'</div></div><button class="del" data-i="'+i+'" aria-label="Remover">&times;</button></div>';}).join(''):'<div class="row"><div class="meta"><div class="sub2">Nenhum exame adicionado ainda.</div></div></div>';
+    var rows=sorted.length?sorted.map(function(e){var i=exams.indexOf(e);
+      return '<div class="row"><div class="meta"><div class="t">'+esc(e.nome)+(e.resultado?' — '+esc(e.resultado):'')+'</div>'+
+        '<div class="sub2">'+esc(e.data||'')+(e.laudo?' · '+esc(e.laudo).slice(0,140):'')+'</div>'+
+        (e.f?'<button class="exfile" data-open="'+e.ts+'">Abrir arquivo anexado'+(e.fn?' ('+esc(e.fn)+')':'')+'</button>':'')+
+        '</div><button class="del" data-i="'+i+'" aria-label="Remover">&times;</button></div>';}).join('')
+      :'<div class="row"><div class="meta"><div class="sub2">Nenhum exame adicionado ainda.</div></div></div>';
     el('examesBody').innerHTML=
-      '<div class="sec"><div class="list">'+rows+'</div>'+
-      '<div class="seclab" style="margin-top:18px;color:var(--muted)">Adicionar exame</div>'+
-      '<input class="input" id="exNome" placeholder="Nome do exame (ex.: Hemograma)">'+
-      '<div class="addrow" style="margin-top:10px"><input id="exRes" placeholder="Resultado (ex.: Normal / 4,8)"><button class="sbtn" id="exAdd">Adicionar</button></div></div>';
-    el('exAdd').onclick=function(){var n=el('exNome').value.trim();if(!n)return;var d=new Date();var ds=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();exams.push({nome:n,resultado:el('exRes').value.trim(),data:ds,ts:Date.now()});saveExams();el('exNome').value='';el('exRes').value='';renderExames();};
-    el('exRes').addEventListener('keydown',function(e){if(e.key==='Enter')el('exAdd').click();});
-    el('exNome').addEventListener('keydown',function(e){if(e.key==='Enter')el('exRes').focus();});
-    [].forEach.call(el('examesBody').querySelectorAll('.del'),function(b){b.onclick=function(){exams.splice(parseInt(b.dataset.i,10),1);saveExams();renderExames();};});
+      '<div class="sec"><div class="lab"><h3>Adicionar exame</h3></div>'+
+      '<div class="field" style="margin-top:0"><label>Nome do exame</label><input class="input" id="exNome" placeholder="ex.: Hemograma"></div>'+
+      '<div class="wrow"><div class="field"><label>Data do exame</label><input class="input" id="exData" type="date"></div>'+
+      '<div class="field"><label>Resultado (resumo)</label><input class="input" id="exRes" placeholder="ex.: Normal / 4,8"></div></div>'+
+      '<div class="field"><label>Laudo (digite ou cole)</label><textarea class="input" id="exLaudo" rows="3" placeholder="Texto do laudo, observações do médico..."></textarea></div>'+
+      (HASIDB?'<div class="field"><label>Anexar arquivo (PDF ou foto do exame)</label><input class="input" id="exFile" type="file" accept="application/pdf,image/*" style="padding:10px"></div>':'')+
+      '<button class="cta" id="exAdd" style="margin-top:14px">Salvar exame</button></div>'+
+      '<div class="sec"><div class="lab"><h3>Seus exames</h3></div><div class="list">'+rows+'</div></div>';
+    el('exAdd').onclick=function(){
+      var n=el('exNome').value.trim();
+      if(!n){el('exNome').classList.add('miss');el('exNome').focus();return;}
+      var dv=el('exData').value,ds;
+      if(dv){var p=dv.split('-');ds=p[2]+'/'+p[1]+'/'+p[0];}
+      else{var d=new Date();ds=String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+      var ent={nome:n,resultado:el('exRes').value.trim(),laudo:el('exLaudo').value.trim(),data:ds,ts:Date.now()};
+      var fi=HASIDB?el('exFile'):null,f=fi&&fi.files&&fi.files[0];
+      function fin(){exams.push(ent);saveExams();renderExames();try{window.scrollTo(0,0);}catch(e){}}
+      if(f){
+        if(f.size>15*1024*1024){alert('Arquivo muito grande — o limite é 15 MB.');return;}
+        putFile('exam_'+ent.ts,f,function(ok){if(ok){ent.f=1;ent.fn=f.name;}else alert('Não consegui guardar o arquivo; o exame será salvo sem o anexo.');fin();});
+      }else fin();
+    };
+    [].forEach.call(el('examesBody').querySelectorAll('[data-open]'),function(b){
+      b.onclick=function(){
+        getFile('exam_'+b.dataset.open,function(blob){
+          if(!blob){alert('Não encontrei o arquivo neste aparelho. Anexos ficam salvos no aparelho em que foram adicionados.');return;}
+          var u=URL.createObjectURL(blob),a=document.createElement('a');
+          a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();
+          setTimeout(function(){URL.revokeObjectURL(u);a.remove();},5000);
+        });
+      };
+    });
+    [].forEach.call(el('examesBody').querySelectorAll('.del'),function(b){b.onclick=function(){var i=parseInt(b.dataset.i,10);var e=exams[i];if(e&&e.f)delFile('exam_'+e.ts);exams.splice(i,1);saveExams();renderExames();};});
   }
+
   /* ---------- CICLO (mulher) ---------- */
   var GKEY='mybody_gyneco';
   function loadGyneco(){try{return JSON.parse(localStorage.getItem(GKEY)||'{}')||{};}catch(e){return {};}}
@@ -980,7 +979,7 @@ window.addEventListener('error',function(e){
       :('<div class="weatherbox"><div class="weathersub" id="whStatus" style="flex:1">Use sua localização para registrar o clima junto com o humor.</div><button class="sbtn" id="whBtn">Ativar</button></div>');
     var mb='<div class="moodrow">'+MOODS.map(function(x){return '<button data-m="'+x.m+'"><span class="face" style="background:'+x.c+'"></span>'+x.l+'</button>';}).join('')+'</div>';
     var sorted=moods.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-    var rows=sorted.length?sorted.slice(0,40).map(function(e){var i=moods.indexOf(e);var P=['','leve','moderada','forte'];var tt=[];if(e.m)tt.push(moodLabel(e.m));if(e.pain)tt.push('dor '+P[e.pain]);if(e.temp!=null)tt.push(e.temp+'&deg;');var s2=e.note?esc(e.note):(e.cond||'');return '<div class="row"><div class="dotcol"><span class="dot" style="background:'+(e.m?moodColor(e.m):'#c9ccd6')+'"></span></div><div class="meta"><div class="t">'+(tt.join(' · ')||'Registro')+'</div><div class="sub2">'+s2+'</div></div><div class="when">'+esc(e.date||'')+' <button class="del" data-i="'+i+'" aria-label="Remover">&times;</button></div></div>';}).join(''):'<div class="row"><div class="meta"><div class="sub2">Nenhum registro de humor ainda.</div></div></div>';
+    var rows=sorted.length?sorted.slice(0,40).map(function(e){var i=moods.indexOf(e);var P=['','leve','moderada','forte'];var tt=[];if(e.m)tt.push(moodLabel(e.m));if(e.pain)tt.push('dor '+P[e.pain]+(e.painLoc&&e.painLoc.length?' ('+e.painLoc.join(', ').toLowerCase()+')':''));if(e.temp!=null)tt.push(e.temp+'&deg;');var s2=e.note?esc(e.note):(e.cond||'');return '<div class="row"><div class="dotcol"><span class="dot" style="background:'+(e.m?moodColor(e.m):'#c9ccd6')+'"></span></div><div class="meta"><div class="t">'+(tt.join(' · ')||'Registro')+'</div><div class="sub2">'+s2+'</div></div><div class="when">'+esc(e.date||'')+' <button class="del" data-i="'+i+'" aria-label="Remover">&times;</button></div></div>';}).join(''):'<div class="row"><div class="meta"><div class="sub2">Nenhum registro de humor ainda.</div></div></div>';
     el('humorBody').innerHTML='<div class="sec">'+wh+'</div>'+
       '<div class="sec"><div class="lab"><h3>Como você está agora?</h3></div>'+mb+'</div>'+
       '<div class="sec"><div class="lab"><h3>Seus registros</h3></div><div class="list">'+rows+'</div></div>';
@@ -989,14 +988,18 @@ window.addEventListener('error',function(e){
     [].forEach.call(el('humorBody').querySelectorAll('.del'),function(b){b.onclick=function(){moods.splice(parseInt(b.dataset.i,10),1);saveMood();renderMood();};});
   }
   /* ---------- CHECK-IN DIARIO ---------- */
-  var CKEY2='mybody_checkin_last',cmMoodSel=null,cmPainSel=null;
+  var CKEY2='mybody_checkin_last',cmMoodSel=null,cmPainSel=null,cmLocSel=[];
   function todayISO(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
   function doneCheckin(){try{localStorage.setItem(CKEY2,todayISO());}catch(e){}el('checkin').classList.remove('show');}
   function openCheckin(){
     cmMoodSel=null;cmPainSel=null;
     el('cmMood').innerHTML=MOODS.map(function(x){return '<button data-m="'+x.m+'"><span class="face" style="background:'+x.c+'"></span>'+x.l+'</button>';}).join('');
     [].forEach.call(el('cmMood').querySelectorAll('button'),function(b){b.onclick=function(){cmMoodSel=parseInt(b.dataset.m,10);[].forEach.call(el('cmMood').querySelectorAll('button'),function(o){o.classList.toggle('msel',o===b);});};});
-    [].forEach.call(el('cmPain').querySelectorAll('button'),function(b){b.onclick=function(){cmPainSel=parseInt(b.dataset.p,10);[].forEach.call(el('cmPain').querySelectorAll('button'),function(o){o.classList.toggle('sel',o===b);});};});
+    var LOCS=['Cabeça','Pescoço','Peito','Abdômen','Costas','Braços','Mãos','Pernas','Joelhos','Pés'];
+    el('cmLoc').innerHTML=LOCS.map(function(l){return '<button type="button" data-l="'+l+'">'+l+'</button>';}).join('');
+    cmLocSel=[];el('cmLocWrap').classList.add('hidden');
+    [].forEach.call(el('cmLoc').querySelectorAll('button'),function(b){b.onclick=function(){var l=b.dataset.l,k=cmLocSel.indexOf(l);if(k>=0)cmLocSel.splice(k,1);else cmLocSel.push(l);b.classList.toggle('sel',k<0);};});
+    [].forEach.call(el('cmPain').querySelectorAll('button'),function(b){b.onclick=function(){cmPainSel=parseInt(b.dataset.p,10);[].forEach.call(el('cmPain').querySelectorAll('button'),function(o){o.classList.toggle('sel',o===b);});el('cmLocWrap').classList.toggle('hidden',cmPainSel===0);};});
     el('cmNote').value='';
     el('cmTitle').textContent=(profile&&profile.nome)?('Como você está hoje, '+profile.nome.split(/\s+/)[0]+'?'):'Como você está hoje?';
     el('cmSave').onclick=function(){
@@ -1004,6 +1007,7 @@ window.addEventListener('error',function(e){
       var e={date:ds,ts:Date.now()};
       if(cmMoodSel)e.m=cmMoodSel;
       if(cmPainSel!=null)e.pain=cmPainSel;
+      if(cmPainSel>0&&cmLocSel.length)e.painLoc=cmLocSel.slice();
       var nt=el('cmNote').value.trim();if(nt)e.note=nt;
       if(weatherNow){e.temp=weatherNow.temp;e.code=weatherNow.code;e.cond=wText(weatherNow.code);}
       if(cmMoodSel||cmPainSel!=null||nt){moods.push(e);saveMood();}
