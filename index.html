@@ -275,7 +275,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 12</span>
+<span class="vtag" style="z-index:80">versão 13</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -456,13 +456,10 @@
     <div id="stage"></div>
     <div class="av-top">
       <button class="back" id="backHome"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> Início</button>
-      <div class="ttl">Toque em um<br>ponto luminoso</div>
+      <div class="ttl">Arraste para girar<br>aproxime os dedos p/ zoom</div>
     </div>
     <div class="av-legend" id="avLegend">
-      <span><i class="d" style="background:var(--mint)"></i> em dia</span>
-      <span><i class="d" style="background:var(--warn)"></i> acompanhar</span>
-      <span><i class="d" style="background:var(--alert)"></i> atenção</span>
-      <span><i class="d" style="background:#8896a0"></i> sem dados</span>
+      <span>Seu corpo em 3D — modo anatômico</span>
     </div>
     <button class="reset" id="resetView" aria-label="Recentralizar">&#8635;</button>
     <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
@@ -4668,10 +4665,10 @@ window.addEventListener('error',function(e){
     hloop(0);
   }
   var MODELBUF=null,modelOK=true;
-  var MODEL_URL='https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/models/gltf/Soldier.glb';
+  var MODEL_URL='https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/models/gltf/Xbot.glb';
   function loadBuf(cb){if(MODELBUF){cb(MODELBUF);return;}
     fetch(MODEL_URL).then(function(r){if(!r.ok)throw 0;return r.arrayBuffer();}).then(function(b){MODELBUF=b;cb(b);}).catch(function(){cb(null);});}
-  function tintModel(root,P){root.traverse(function(o){if(o.isMesh)o.frustumCulled=false;});}
+  function tintModel(root,P){var t=new THREE.Color(P.skin);root.traverse(function(o){if(o.isMesh){o.frustumCulled=false;var ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(function(m){if(m&&m.color){m.color.copy(t);m.needsUpdate=true;}});}});}
   var FRAC={neuro:[0,0.86,0.5],endo:[0,0.66,0.55],resp:[-0.32,0.34,0.5],cardio:[0.2,0.30,0.55],digest:[0,0.02,0.6],renal:[0.36,-0.06,0.25],musc:[-0.28,-0.5,0.42]};
   function addMarkersFrac(group,sz,base){
     markers=[];
@@ -4739,8 +4736,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,false,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 12 · avatar 3D ✓';}
-      else if(vt)vt.textContent='versão 12 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 13 · avatar 3D ✓';}
+      else if(vt)vt.textContent='versão 13 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -4775,9 +4772,9 @@ window.addEventListener('error',function(e){
     var P=bodyParams();
     if(avRoot){tintModel(avRoot,P);selected=null;el('sheet').classList.remove('open');if(el('avLegend'))el('avLegend').style.opacity=1;return;}
     clearGroup(bodyG);bodyG.scale.set(1,1,1);markers=[];
-    addBody(bodyG,P);addMarkersFixed(bodyG);avZoom=9.6*(P.scale||1);zoom=avZoom;
+    addBody(bodyG,P);avZoom=9.6*(P.scale||1);zoom=avZoom;
     loadInto(bodyG,P,true,function(ok,info){
-      if(ok){clearGroup(bodyG);markers=[];bodyG.add(info.root);addMarkersFixed(bodyG);avRoot=info.root;avMixer=info.mixer;avZoom=9.6;zoom=9.6;}
+      if(ok){clearGroup(bodyG);markers=[];bodyG.add(info.root);avRoot=info.root;avMixer=info.mixer;avZoom=9.6;zoom=9.6;}
       rotY=0.35;rotX=0;selected=null;if(el('avLegend'))el('avLegend').style.opacity=1;el('sheet').classList.remove('open');
     });
   }
