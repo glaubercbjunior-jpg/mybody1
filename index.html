@@ -184,6 +184,7 @@
   .fisman button{background:none;border:none;padding:0;font-family:inherit;font-size:11.5px;
                  color:var(--pink-deep);text-decoration:underline;cursor:pointer;}
   .fischart{background:#fff;border:1px solid #e6eaf0;border-radius:14px;padding:10px 8px 4px;margin-top:10px;}
+  .fischartrot{font-size:11px;color:#5f7079;padding:0 4px 6px;}
   .sseg{display:flex;gap:6px;flex-wrap:wrap;}
   .sseg button{flex:1;min-width:62px;background:#fff;border:1px solid #e2e4e9;border-radius:11px;padding:9px 4px;font-size:12px;font-weight:600;color:#5f7079;cursor:pointer;font-family:inherit;}
   .sseg button.on{color:#fff;background:var(--c);border-color:var(--c);}
@@ -390,7 +391,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 22</span>
+<span class="vtag" style="z-index:80">versão 24</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -6061,8 +6062,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 22 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 22 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 24 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 24 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6169,17 +6170,183 @@ window.addEventListener('error',function(e){
   };
   var RISCO_ST={'baixo':'ok','moderado':'warn','alto':'alert','muito alto':'alert'};
 
+  /* ---- classificacao da pressao arterial, Diretriz Brasileira 2025 ----
+     Mudou em relacao a 2020: a categoria "PA otima" foi removida e a
+     pre-hipertensao passou a comecar em 120/80. Classifica-se pelo MAIOR
+     entre sistolica e diastolica. */
+  function classePA(pas,pad){
+    if(pas>=180||pad>=110) return {c:'HA estágio 3',d:'hipertensão grave',st:'alert'};
+    if(pas>=160||pad>=100) return {c:'HA estágio 2',d:'hipertensão moderada',st:'alert'};
+    if(pas>=140||pad>= 90) return {c:'HA estágio 1',d:'hipertensão leve',st:'alert'};
+    if(pas>=120||pad>= 80) return {c:'Pré-hipertensão',d:'acima do normal',st:'warn'};
+    return                        {c:'PA normal',d:'dentro do normal',st:'ok'};
+  }
+  function classeFC(fc){
+    if(fc==null||isNaN(fc))return null;
+    if(fc<60) return {c:'Bradicardia',d:'FC abaixo de 60 bpm'};
+    if(fc>100)return {c:'Taquicardia',d:'FC acima de 100 bpm'};
+    return           {c:'FC normal',d:'entre 60 e 100 bpm'};
+  }
+  /* ---- velocidade de mudanca: quanto a variavel anda por ano ----
+     Minimos quadrados sobre (tempo, valor). E o sinal longitudinal: no rim,
+     o KDIGO chama de progressao rapida uma queda maior que 5 mL/min/1,73m2 ao ano. */
+  function tendenciaAno(hist,valorAtual,tsAtual){
+    var pts=[];
+    (hist||[]).forEach(function(h){
+      if(h&&h.out&&h.out.serie!=null&&!isNaN(h.out.serie)&&h.ts)pts.push({t:h.ts,v:h.out.serie});
+    });
+    if(valorAtual!=null&&!isNaN(valorAtual))pts.push({t:tsAtual||Date.now(),v:valorAtual});
+    if(pts.length<2)return null;
+    var t0=pts[0].t, n=pts.length, sx=0,sy=0,sxy=0,sxx=0;
+    pts.forEach(function(p){
+      var x=(p.t-t0)/(365.25*24*3600*1000);  /* anos */
+      sx+=x;sy+=p.v;sxy+=x*p.v;sxx+=x*x;
+    });
+    var den=n*sxx-sx*sx;
+    if(Math.abs(den)<1e-12)return null;
+    var meses=(pts[n-1].t-t0)/(30.44*24*3600*1000);
+    if(meses<1)return null;            /* janela curta demais para extrapolar */
+    return {porAno:(n*sxy-sx*sy)/den, n:n, meses:meses};
+  }
+
+  /* ---- respiratorio ---- */
+  function classeSpO2(x){
+    if(x==null||isNaN(x))return null;
+    if(x>=95)return {c:'SpO₂ normal',d:'95% ou mais',st:'ok'};
+    if(x>=91)return {c:'SpO₂ limítrofe',d:'entre 91 e 94%',st:'warn'};
+    return         {c:'Hipoxemia',d:'90% ou menos',st:'alert'};
+  }
+  function classeFR(x){
+    if(x==null||isNaN(x))return null;
+    if(x<12) return {c:'Bradipneia',d:'abaixo de 12 irpm',st:'warn'};
+    if(x>24) return {c:'Taquipneia',d:'acima de 24 irpm',st:'warn'};
+    if(x>20) return {c:'FR no limite',d:'entre 21 e 24 irpm',st:'warn'};
+    return          {c:'FR normal',d:'entre 12 e 20 irpm',st:'ok'};
+  }
+  function gradGOLD(vef1pct){
+    if(vef1pct>=80)return {c:'GOLD 1',d:'obstrução leve',st:'warn'};
+    if(vef1pct>=50)return {c:'GOLD 2',d:'obstrução moderada',st:'warn'};
+    if(vef1pct>=30)return {c:'GOLD 3',d:'obstrução grave',st:'alert'};
+    return                {c:'GOLD 4',d:'obstrução muito grave',st:'alert'};
+  }
+  var PIOR={ok:0,warn:1,alert:2};
+  function piorStatus(){
+    var r='ok';
+    for(var i=0;i<arguments.length;i++){
+      var x=arguments[i];
+      if(x&&PIOR[x]>PIOR[r])r=x;
+    }
+    return r;
+  }
   var FISIO={
+    resp:{
+      titulo:'Avaliação respiratória',
+      campos:[
+        {k:'spo2',rot:'Saturação de O₂',un:'%',min:50,max:100,casas:0,req:true,ph:'ex.: 96'},
+        {k:'fr',  rot:'Frequência respiratória',un:'irpm',min:5,max:60,casas:0,ph:'opcional'},
+        {k:'rel', rot:'VEF₁/CVF pós-BD',un:'0 a 1',min:0.1,max:1,casas:2,ph:'ex.: 0,62'},
+        {k:'vef1',rot:'VEF₁ (% do previsto)',un:'%',min:10,max:160,casas:0,ph:'ex.: 54'},
+        {k:'cvf', rot:'CVF (% do previsto)',un:'%',min:10,max:160,casas:0,ph:'ex.: 88'}
+      ],
+      fonte:'Graduação GOLD (VEF₁ % do previsto, com VEF₁/CVF < 0,70 pós-broncodilatador). Percentuais do previsto conforme o laudo da espirometria.',
+      calc:function(v,hist){
+        var S=classeSpO2(v.spo2);
+        if(!S)return {erro:'Informe a saturação de oxigênio.'};
+        var F=classeFR(v.fr);
+
+        var tags=[{t:S.c,d:S.d}], notas=[], espiro=null, st=S.st;
+        if(F){tags.push({t:F.c,d:F.d});st=piorStatus(st,F.st);}
+
+        if(v.rel!=null&&!isNaN(v.rel)){
+          if(v.rel<0.70){
+            if(v.vef1==null||isNaN(v.vef1))
+              return {erro:'Com VEF₁/CVF abaixo de 0,70, informe também o VEF₁ em percentual do previsto para graduar.'};
+            espiro=gradGOLD(v.vef1);
+            tags.push({t:'Obstrutivo',d:'VEF₁/CVF '+numBR(v.rel,2)});
+            tags.push({t:espiro.c,d:espiro.d});
+            st=piorStatus(st,espiro.st);
+          }else if(v.cvf!=null&&!isNaN(v.cvf)&&v.cvf<80){
+            tags.push({t:'Sugere restrição',d:'relação preservada com CVF '+numBR(v.cvf,0)+'%'});
+            st=piorStatus(st,'warn');
+            notas.push('Restrição não se confirma por espirometria: é preciso medir volumes pulmonares (capacidade pulmonar total). Aqui fica só a suspeita.');
+          }else{
+            tags.push({t:'Sem distúrbio',d:'relação e CVF preservadas'});
+          }
+          notas.push('A razão fixa de 0,70 é o critério GOLD. ATS/ERS e a SBPT recomendam o limite inferior da normalidade, que diverge nos extremos de idade — a razão fixa subestima obstrução no jovem e superestima no idoso.');
+          notas.push('A graduação GOLD vale para espirometria pós-broncodilatador.');
+        }
+
+        notas.push('Oxímetro de dedo perde precisão com má perfusão, esmalte, e tende a superestimar a saturação em pele mais pigmentada.');
+
+        var T=tendenciaAno(hist,v.spo2,Date.now());
+        var risco=null;
+        if(T&&Math.abs(T.porAno)>=0.8)
+          risco='SpO₂ '+(T.porAno>0?'subindo':'caindo')+' cerca de '+numBR(Math.abs(T.porAno),1)+' ponto por ano, ao longo de '+numBR(T.meses,0)+' meses';
+
+        var conta='SpO₂ '+numBR(v.spo2,0)+'% — normal ≥ 95, limítrofe 91 a 94, hipoxemia ≤ 90.'+
+          (F?('   ·   FR '+numBR(v.fr,0)+' irpm — normal 12 a 20.'):'')+
+          (v.rel!=null&&!isNaN(v.rel)?('   ·   VEF₁/CVF '+numBR(v.rel,2)+(v.rel<0.70?' < 0,70 → obstrução; graduação pelo VEF₁ '+numBR(v.vef1,0)+'% do previsto.':' ≥ 0,70 → sem obstrução.')):'');
+
+        return {
+          principal:{val:numBR(v.spo2,0),un:'%',rot:'Saturação de oxigênio'},
+          serie:v.spo2, serieRot:'Saturação de O₂ ao longo do tempo (%)',
+          bruto:{spo2:v.spo2,fr:v.fr,rel:v.rel,vef1:v.vef1,cvf:v.cvf},
+          tags:tags, risco:risco, status:st, conta:conta, notas:notas
+        };
+      }
+    },
+    cardio:{
+      titulo:'Avaliação da pressão arterial',
+      campos:[
+        {k:'pas',rot:'Pressão sistólica',un:'mmHg',min:50,max:300,casas:0,req:true,ph:'ex.: 150'},
+        {k:'pad',rot:'Pressão diastólica',un:'mmHg',min:30,max:200,casas:0,req:true,ph:'ex.: 95'},
+        {k:'fc', rot:'Frequência cardíaca',un:'bpm',min:20,max:250,casas:0,ph:'opcional'}
+      ],
+      fonte:'Diretriz Brasileira de Hipertensão Arterial 2025 (Sociedade Brasileira de Cardiologia)',
+      calc:function(v){
+        var pas=v.pas,pad=v.pad;
+        if(pas==null||isNaN(pas)) return {erro:'Informe a pressão sistólica.'};
+        if(pad==null||isNaN(pad)) return {erro:'Informe a pressão diastólica.'};
+        if(pad>=pas) return {erro:'A diastólica ('+numBR(pad,0)+') precisa ser menor que a sistólica ('+numBR(pas,0)+'). Confira se os dois valores não foram trocados.'};
+
+        var C=classePA(pas,pad);
+        var pam=pad+(pas-pad)/3, pp=pas-pad;
+        var F=classeFC(v.fc);
+
+        var tags=[{t:C.c,d:C.d}];
+        if(pas>=140&&pad<90)tags.push({t:'Sistólica isolada',d:'sistólica alta com diastólica normal'});
+        if(F)tags.push({t:F.c,d:F.d});
+
+        var notas=[];
+        notas.push('Uma medida de consultório não fecha diagnóstico: a diretriz pede medidas repetidas em dias diferentes e, quando possível, confirmação por MAPA ou MRPA.');
+        if(pas>=180||pad>=110)notas.push('Valores nesta faixa pedem avaliação do paciente agora. Crise hipertensiva se define pelo quadro clínico, não pelo número isolado.');
+        if(pp>=60)notas.push('Pressão de pulso de '+numBR(pp,0)+' mmHg — pressão de pulso alargada costuma acompanhar rigidez arterial, sobretudo no idoso.');
+        notas.push('Cor do órgão: normal fica em dia, pré-hipertensão fica em acompanhar, e qualquer estágio de hipertensão fica em atenção.');
+
+        var conta='PAM = PAD + (PAS − PAD)/3 = '+numBR(pad,0)+' + ('+numBR(pas,0)+' − '+numBR(pad,0)+')/3 = '+numBR(pam,0)+' mmHg'+
+                  '   ·   Pressão de pulso = PAS − PAD = '+numBR(pas,0)+' − '+numBR(pad,0)+' = '+numBR(pp,0)+' mmHg'+
+                  '   ·   Classificação pelo maior entre sistólica e diastólica.';
+
+        return {
+          principal:{val:numBR(pas,0)+'/'+numBR(pad,0),un:'mmHg',rot:'Pressão arterial de consultório'},
+          serie:pas, serieRot:'Pressão sistólica ao longo do tempo (mmHg)',
+          bruto:{pas:pas,pad:pad,pam:pam,pp:pp},
+          tags:tags,
+          risco:'PAM '+numBR(pam,0)+' mmHg · pressão de pulso '+numBR(pp,0)+' mmHg',
+          status:C.st,conta:conta,notas:notas
+        };
+      }
+    },
     renal:{
       titulo:'Avaliação da função renal',
       campos:[
-        {k:'creat',rot:'Creatinina sérica',un:'mg/dL',min:0.1,max:30,passo:'0.01',req:true,
+        {k:'creat',rot:'Creatinina sérica',un:'mg/dL',min:0.1,max:30,casas:2,req:true,
          ph:'ex.: 1,40'},
-        {k:'rac',rot:'Albumina/creatinina urinária',un:'mg/g',min:0,max:20000,passo:'1',
+        {k:'rac',rot:'Albumina/creatinina urinária',un:'mg/g',min:0,max:20000,casas:0,
          ph:'opcional'}
       ],
       fonte:'CKD-EPI 2021 (NIDDK/NIH) · estágios e risco KDIGO (National Kidney Foundation)',
-      calc:function(v){
+      calc:function(v,hist){
         var idade=getAge();
         var fem=!!(profile&&profile.sexo==='Feminino');
         if(idade==null)   return {erro:'Preencha a data de nascimento do paciente — a equação usa a idade.'};
@@ -6190,6 +6357,7 @@ window.addEventListener('error',function(e){
 
         var tfg=tfgCkdEpi2021(creat,idade,fem);
         var G=estagioG(tfg), A=categoriaA(v.rac), risco=null, status;
+        var T=tendenciaAno(hist,tfg,Date.now());
 
         if(A){ risco=KDIGO_RISCO[G.c][A.c]; status=RISCO_ST[risco]; }
         else { status=(G.c==='G1'||G.c==='G2')?'ok':((G.c==='G4'||G.c==='G5')?'alert':'warn'); }
@@ -6201,12 +6369,17 @@ window.addEventListener('error',function(e){
                   '  —  '+(fem?'mulher':'homem')+', '+idade+' anos';
 
         var notas=[];
+        if(T&&T.porAno<0&&Math.abs(T.porAno)>=5)
+          notas.push('A TFG vem caindo cerca de '+numBR(Math.abs(T.porAno),1)+' mL/min/1,73 m² por ano — medido ao longo de '+numBR(T.meses,0)+' meses, com '+T.n+' avaliações. O KDIGO chama de progressão rápida uma queda maior que 5 por ano.');
+        else if(T&&Math.abs(T.porAno)>=1)
+          notas.push('A TFG vem '+(T.porAno>0?'subindo':'caindo')+' cerca de '+numBR(Math.abs(T.porAno),1)+' mL/min/1,73 m² por ano — medido ao longo de '+numBR(T.meses,0)+' meses, com '+T.n+' avaliações.');
         if(!A)notas.push('Sem albuminúria informada: o risco KDIGO precisa das duas categorias (G e A). O estado acima vem só do estágio G.');
         notas.push('Um valor isolado não fecha doença renal crônica — o critério KDIGO pede alteração mantida por pelo menos 3 meses.');
         if(G.c==='G1'||G.c==='G2')notas.push('Sem sinal de lesão renal, G1 e G2 isolados não caracterizam DRC.');
 
         return {
           principal:{val:numBR(tfg,0),un:'mL/min/1,73 m²',rot:'TFG estimada'},
+          serie:tfg, serieRot:'TFG estimada ao longo do tempo (mL/min/1,73 m²)',
           bruto:{tfg:tfg},
           tags:[{t:G.c,d:G.d}].concat(A?[{t:A.c,d:A.d}]:[]),
           risco:risco?('Risco KDIGO '+risco):null,
@@ -6243,25 +6416,29 @@ window.addEventListener('error',function(e){
     var u=fisUltimo(id);
     var html='<div class="seclab">'+esc(M.titulo)+'</div>';
 
-    if(u&&u.out&&!u.out.erro){
-      var o=u.out;
-      var tags=o.tags.map(function(t){return '<span class="fistag"><b>'+esc(t.t)+'</b><span>'+esc(t.d)+'</span></span>';}).join('');
-      var ent=M.campos.filter(function(c){return u.v[c.k]!=null&&!isNaN(u.v[c.k]);})
-               .map(function(c){return esc(c.rot.toLowerCase())+' '+numBR(u.v[c.k],c.k==='rac'?0:2)+' '+esc(c.un);}).join(' · ');
+    /* registro antigo, de uma versao anterior do app, pode nao ter todos os
+       campos: a ficha mostra o que der e nao quebra */
+    if(u&&u.out&&!u.out.erro&&u.out.principal){
+      var o=u.out, uv=u.v||{};
+      var tags=(o.tags||[]).map(function(t){return '<span class="fistag"><b>'+esc(t.t)+'</b><span>'+esc(t.d||'')+'</span></span>';}).join('');
+      var ent=M.campos.filter(function(c){return uv[c.k]!=null&&!isNaN(uv[c.k]);})
+               .map(function(c){return esc(c.rot.toLowerCase())+' '+numBR(uv[c.k],c.casas==null?2:c.casas)+' '+esc(c.un);}).join(' · ');
       html+='<div class="fispanel">'+
-        '<div class="fisbig"><span class="v">'+esc(o.principal.val)+'</span><span class="u">'+esc(o.principal.un)+'</span></div>'+
-        '<div class="fisrot">'+esc(o.principal.rot)+' · '+esc(u.date)+'</div>'+
+        '<div class="fisbig"><span class="v">'+esc(o.principal.val)+'</span><span class="u">'+esc(o.principal.un||'')+'</span></div>'+
+        '<div class="fisrot">'+esc(o.principal.rot||'')+' · '+esc(u.date||'')+'</div>'+
         '<div class="fistags">'+tags+'</div>'+
         (o.risco?'<div class="fisrisk" style="color:'+STTX[o.status]+'">'+esc(o.risco)+'</div>':'')+
         '<div class="fisent">'+ent+'</div>'+
-        '<details class="fisconta"><summary>ver a conta</summary><div class="c">'+esc(o.conta)+'</div></details>'+
+        (o.conta?'<details class="fisconta"><summary>ver a conta</summary><div class="c">'+esc(o.conta)+'</div></details>':'')+
         (o.notas||[]).map(function(n){return '<div class="fisnota">'+esc(n)+'</div>';}).join('')+
         '<div class="fisfonte">'+esc(M.fonte)+'</div>'+
       '</div>';
 
-      var serie=fisList(id).filter(function(x){return x.out&&x.out.bruto&&x.out.bruto.tfg!=null;})
-                 .map(function(x){return {v:Math.round(x.out.bruto.tfg),date:x.date};});
-      if(serie.length>1)html+='<div class="fischart">'+chartSvg(serie)+'</div>';
+      var serie=fisList(id).filter(function(x){return x.out&&x.out.serie!=null&&!isNaN(x.out.serie);})
+                 .map(function(x){return {v:Math.round(x.out.serie),date:x.date};});
+      if(serie.length>1)html+='<div class="fischart">'+
+        (o.serieRot?'<div class="fischartrot">'+esc(o.serieRot)+'</div>':'')+
+        chartSvg(serie)+'</div>';
     }
 
     html+='<div class="seclab">'+(u?'Nova avaliação':'Lançar os dados')+'</div>';
@@ -6327,7 +6504,7 @@ window.addEventListener('error',function(e){
           el('fisErr').innerHTML='<div class="fiserr">Confira o campo “'+esc(faltou.rot)+'”: informe um valor entre '+numBR(faltou.min,2)+' e '+numBR(faltou.max,0)+' '+esc(faltou.un)+'.</div>';
           return;
         }
-        var out=M.calc(v);
+        var out=M.calc(v,fisList(id));
         if(out.erro){el('fisErr').innerHTML='<div class="fiserr">'+esc(out.erro)+'</div>';return;}
         var d=new Date();
         fisList(id).push({ts:Date.now(),
