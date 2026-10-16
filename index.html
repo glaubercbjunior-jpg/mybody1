@@ -391,7 +391,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 24</span>
+<span class="vtag" style="z-index:80">versão 25</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -531,6 +531,14 @@
       <p><b>Arquivos de exame.</b> Os PDFs e fotos anexados aos exames <b>não saem do aparelho</b>. Não são enviados e não voltam na troca de aparelho.</p>
       <p><b>Sigilo e responsabilidade.</b> Os dados são de terceiros e estão sob sigilo profissional. O profissional responsável é o controlador desses dados perante a LGPD, inclusive quanto à base legal do tratamento, à segurança, ao atendimento de pedidos dos pacientes e à comunicação de incidentes.</p>
       <p><b>Direitos dos pacientes.</b> A ficha de cada paciente pode ser baixada em arquivo ou apagada de forma definitiva, a qualquer momento, pela aba Perfil daquele paciente.</p>
+      <p><b>De onde vem a anatomia.</b> Os órgãos do avatar são malhas do
+      <a href="https://github.com/Z-Anatomy/models-of-human-anatomy" target="_blank" rel="noopener">Z-Anatomy</a>,
+      derivadas do <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/" target="_blank" rel="noopener">BodyParts3D</a>
+      (Database Center for Life Science), simplificadas e reposicionadas para caber no avatar.
+      Ambos sob <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY-SA 4.0</a>,
+      que exige citar a origem e manter a mesma licença em qualquer trabalho derivado —
+      inclusive este. Os valores de referência clínicos vêm das diretrizes citadas em
+      cada ficha, não desses modelos.</p>
       <button type="button" class="ghost" id="lgPrivacyBack">Voltar</button>
     </div>
 
@@ -5632,7 +5640,63 @@ window.addEventListener('error',function(e){
   var RGB={snc:'rgb(139,111,196)',cardio:'rgb(209,73,91)',resp:'rgb(74,144,184)',gastro:'rgb(201,138,62)',renal:'rgb(90,168,122)'};
   var MARK_POS={snc:[0,0.845,0.040],cardio:[0.030,0.405,0.056],resp:[-0.085,0.395,0.058],
                 gastro:[0,0.215,0.046],renal:[0.125,0.270,-0.030]};
+  /* ===== ANATOMIA REAL =====================================================
+     Malhas do Z-Anatomy (derivadas do BodyParts3D), CC BY-SA 4.0, ajustadas
+     ao avatar: cada vertice esta na altura anatomica certa em centimetros.
+     Fica num arquivo separado, baixado so quando o avatar abre. Se o arquivo
+     nao vier — sem internet, aberto direto do aparelho — o app volta sozinho
+     para as formas desenhadas a mao, sem travar e sem avisar nada.          */
+  var ANAT_ARQ='anatomia.glb',ANAT_GEO=null,ANAT_EST=0,ANAT_FILA=[];
+  function anatCarregar(cb){
+    if(ANAT_EST===2){cb();return;}
+    ANAT_FILA.push(cb);
+    if(ANAT_EST===1)return;
+    ANAT_EST=1;
+    function pronto(){
+      ANAT_EST=2;var f=ANAT_FILA;ANAT_FILA=[];
+      for(var i=0;i<f.length;i++){try{f[i]();}catch(e){}}
+    }
+    var url=ANAT_ARQ;
+    try{url=new URL(ANAT_ARQ,location.href).href;}catch(e){}
+    var x;
+    try{x=new XMLHttpRequest();x.open('GET',url,true);x.responseType='arraybuffer';}
+    catch(e){pronto();return;}
+    x.onerror=pronto;x.ontimeout=pronto;x.onabort=pronto;
+    x.onload=function(){
+      if(x.status>=400||!x.response||x.response.byteLength<64){pronto();return;}
+      try{
+        new THREE.GLTFLoader().parse(x.response,'',function(gl){
+          try{
+            var m={},achou=false;
+            gl.scene.traverse(function(o){
+              if(!o.isMesh||!o.name||o.name.indexOf('_')<1)return;
+              var s=o.name.split('_')[0];
+              if(!m[s])m[s]=[];
+              m[s].push({g:o.geometry,n:o.name});achou=true;
+            });
+            if(achou)ANAT_GEO=m;
+          }catch(e){}
+          pronto();
+        },function(){pronto();});
+      }catch(e){pronto();}
+    };
+    try{x.send();}catch(e){pronto();}
+  }
   function organMesh(id){
+    var lista=ANAT_GEO&&ANAT_GEO[id];
+    if(lista&&lista.length){
+      var g=new THREE.Group();
+      for(var i=0;i<lista.length;i++){
+        /* clona: clearGroup descarta a geometria quando troca de aba */
+        var me=new THREE.Mesh(lista[i].g.clone());
+        me.name=lista[i].n;
+        g.add(me);
+      }
+      return g;
+    }
+    return organMeshDesenhado(id);
+  }
+  function organMeshDesenhado(id){
     var g=new THREE.Group(),parts=[];
     function sph(rx,ry,rz,x,y,z,rz2){
       var m=new THREE.Mesh(new THREE.SphereGeometry(1,24,16));
@@ -5718,6 +5782,27 @@ window.addEventListener('error',function(e){
     }
     if(!m.userData)m.userData={};m.userData.__lin=true;return m;
   }
+  /* O figado, o estomago e as alcas intestinais sao todos do mesmo sistema.
+     Pintados exatamente da mesma cor, encostados uns nos outros, viram uma
+     mancha so. Aqui cada orgao ganha uma variacao de claro/escuro propria,
+     derivada do nome — mesma cor de sistema, peca distinguivel.            */
+  function tomOrgao(base,nome){
+    if(!nome)return base;
+    var h=0;
+    for(var i=0;i<nome.length;i++)h=(h*31+nome.charCodeAt(i))&0xffff;
+    var f=1+((h%9)-4)*0.052;
+    var m=base.clone();
+    m.color.setRGB(Math.min(1,base.color.r*f),Math.min(1,base.color.g*f),Math.min(1,base.color.b*f));
+    if(m.emissive)m.emissive.copy(m.color).multiplyScalar(0.5);
+    if(!m.userData)m.userData={};
+    m.userData.__lin=true;
+    return m;
+  }
+  function pintaOrgaos(grupo,base){
+    grupo.traverse(function(o){
+      if(o.isMesh){o.material=tomOrgao(base,o.name);o.renderOrder=1;o.frustumCulled=false;}
+    });
+  }
   function markerMaterial(status){
     var dark=SC(0x1d2430);
     if(status==='warn'||status==='alert')dark.lerp(SC(CLR[status]),0.7);
@@ -5731,7 +5816,7 @@ window.addEventListener('error',function(e){
     Object.keys(SYS).forEach(function(id){
       var s=SYS[id];
       var og=organMesh(id),mat=organMaterial(id,s.status);
-      og.traverse(function(o){if(o.isMesh){o.material=mat;o.renderOrder=1;o.frustumCulled=false;}});
+      pintaOrgaos(og,mat);
       ANAT.add(og);
       var mp=MARK_POS[id]||[0,0,0.05];
       var core=new THREE.Mesh(new THREE.SphereGeometry(0.0155,18,14),markerMaterial(s.status));
@@ -5762,7 +5847,13 @@ window.addEventListener('error',function(e){
     '    float a = uAlpha;',
     '    float hy = by / uYS;',
     '    a = mix(a, 0.96, smoothstep(0.623,0.681,hy));',
-    '    a = mix(a, 0.52, smoothstep(0.800,0.862,hy));',
+    // a cabeca: nuca e calota translucidas para o cerebro aparecer; o rosto
+    // ate a sobrancelha continua opaco, senao olhos e dentes vazam por dentro
+    '    float hz = vBodyPos.z;',
+    '    float cabeca = smoothstep(0.660,0.710,hy);',
+    '    float nuca   = 1.0 - smoothstep(-0.055,0.005,hz);',
+    '    float calota = smoothstep(0.726,0.792,hy);',
+    '    a = mix(a, 0.40, clamp(max(nuca,calota),0.0,1.0) * cabeca);',
     '    float limb = max(smoothstep(0.175,0.245,bx), 1.0-smoothstep(-0.34,-0.25,by));',
     '    a = mix(a, 1.0, clamp(limb,0.0,1.0));',
     '    diffuseColor.rgb = uSkin;',
@@ -6062,8 +6153,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 24 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 24 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 25 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 25 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6099,7 +6190,7 @@ window.addEventListener('error',function(e){
     clearGroup(bodyG);bodyG.scale.set(1,1,1);markers=[];
     addBody(bodyG,P);linearizeMats(bodyG);avZoom=9.6*(P.scale||1);zoom=avZoom;
     loadInto(bodyG,P,false,function(ok,info){
-      if(ok){clearGroup(bodyG);markers=[];bodyG.add(info.root);avRoot=info.root;avMixer=info.mixer;avZoom=9.6;zoom=9.6;try{addOrgans(info.root,P.female?1.0:1.035);}catch(e){}linearizeMats(bodyG);}
+      if(ok){clearGroup(bodyG);markers=[];bodyG.add(info.root);avRoot=info.root;avMixer=info.mixer;avZoom=9.6;zoom=9.6;try{anatCarregar(function(){try{addOrgans(info.root,P.female?1.0:1.035);}catch(e){}});}catch(e){}linearizeMats(bodyG);}
       rotY=0.35;rotX=0;selected=null;legendOn(true);el('sheet').classList.remove('open');
     });
   }
@@ -6124,7 +6215,7 @@ window.addEventListener('error',function(e){
     var g=markers.filter(function(x){return x.userData.id===id;})[0];if(!g)return;
     var st=SYS[id].status;
     g.userData.core.material=markerMaterial(st);
-    if(g.userData.organ){var nm=organMaterial(id,st);g.userData.organ.traverse(function(o){if(o.isMesh)o.material=nm;});g.userData.mat=nm;}
+    if(g.userData.organ){var nm=organMaterial(id,st);pintaOrgaos(g.userData.organ,nm);g.userData.mat=nm;}
   }
   /* ================= MOTOR FISIOLOGICO (v21) =================
      Cada sistema do corpo pode ter um modulo: campos de entrada com unidade e
