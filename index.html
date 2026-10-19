@@ -399,7 +399,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 30</span>
+<span class="vtag" style="z-index:80">versão 31</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -5467,7 +5467,11 @@ window.addEventListener('error',function(e){
 
   /* ---------- AVATAR HOME (sem pontos) ---------- */
   var homeInited=false,hscene,hcam,hren,hbody,hhost,hZoom=9.6;
-  var hRotY=0.4,hRotX=0,hDrag=false,hMoved=0,hlx=0,hly=0,hIdle=0;
+  /* O avatar abre de frente. Antes abria girado 0,4 rad (23 graus): com a
+     luz vindo de lado, isso fazia uma manga parecer maior que a outra —
+     medi as duas e sao identicas. O giro lento continua, so nao comeca
+     mais torto.                                                        */
+  var hRotY=0,hRotX=0,hDrag=false,hMoved=0,hlx=0,hly=0,hIdle=0;
   function ensureHome3D(){if(homeInited)return;homeInited=true;initHome3D();}
   function initHome3D(){
     hhost=el('homeStage');var w=hhost.clientWidth||320,h=hhost.clientHeight||300;
@@ -6356,8 +6360,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 30 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 30 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 31 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 31 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
