@@ -4832,10 +4832,16 @@ window.addEventListener('error',function(e){
       '<p class="dgnote">O endereço deste aparelho agora: <b>'+esc((location.protocol||'')+'//'+(location.host||'(arquivo local)'))+'</b></p>'+
       '<button type="button" class="ghost" id="dgBack">Voltar</button>';
   }
-  function diagShow(){
-    el('lgHead').classList.add('hidden');
-    el('lgForm').classList.add('hidden');
-    el('lgOff').classList.add('hidden');
+  /* junto=true mostra o diagnostico ABAIXO do formulario, sem tira-lo da
+     frente. E o modo usado quando a falha abre o diagnostico sozinho: quem
+     errou a senha precisa continuar vendo onde digitar. O botao explicito
+     continua trocando a tela inteira, que ali e o que a pessoa pediu. */
+  function diagShow(junto){
+    if(!junto){
+      el('lgHead').classList.add('hidden');
+      el('lgForm').classList.add('hidden');
+      el('lgOff').classList.add('hidden');
+    }
     var d=el('lgDiag');
     d.innerHTML=diagHtml();
     d.classList.remove('hidden');
@@ -4844,7 +4850,7 @@ window.addEventListener('error',function(e){
       el('lgHead').classList.remove('hidden');
       if(fbUp())el('lgForm').classList.remove('hidden');else el('lgOff').classList.remove('hidden');
     };
-    try{window.scrollTo(0,0);}catch(e){}
+    if(!junto){try{window.scrollTo(0,0);}catch(e){}}
   }
 
   /* ---- tela de login ---- */
@@ -4880,7 +4886,7 @@ window.addEventListener('error',function(e){
       el('lgPrivacy').classList.add('hidden');
       el('lgHead').classList.remove('hidden');el('lgForm').classList.remove('hidden');};
     el('lgRetry').onclick=function(){location.reload();};
-    el('lgDiagOpen').onclick=diagShow;
+    el('lgDiagOpen').onclick=function(){diagShow(false);};
     el('lgGo').onclick=lgSubmit;
     el('lgPass').addEventListener('keydown',function(e){if(e.key==='Enter')lgSubmit();});
     el('lgMail').addEventListener('keydown',function(e){if(e.key==='Enter')el('lgPass').focus();});
@@ -4894,6 +4900,7 @@ window.addEventListener('error',function(e){
       })['catch'](function(e){lgBusy(false);lgSay(authMsg(e));});
     };
   }
+  var lgFalhas=0;
   function lgSubmit(){
     var mail=(el('lgMail').value||'').trim(), pass=el('lgPass').value||'';
     if(!mail){lgSay('Digite seu e-mail.');return;}
@@ -4903,7 +4910,21 @@ window.addEventListener('error',function(e){
       lgSay('Para criar a conta, você precisa autorizar a guarda dos seus dados de saúde.');return;}
     if(!fbStart()){lgSay('Não consegui carregar o servidor. Verifique sua internet.');return;}
     lgBusy(true);lgSay('');
-    var done=function(e){lgBusy(false);lgSay(authMsg(e));};
+    /* Quando a entrada falha, o diagnostico abre sozinho.
+       Ele ja existia, mas atras de um botao — e quem nao esta conseguindo
+       entrar nao deveria precisar procurar o botao. Erro de configuracao
+       (dominio nao liberado, e-mail/senha desligado no Firebase, chave
+       errada) abre na hora, porque digitar de novo nao resolve. Senha
+       errada abre na segunda tentativa seguida: a primeira pode ser so um
+       dedo trocado, a segunda ja merece explicacao. */
+    var done=function(e){
+      lgBusy(false);lgSay(authMsg(e));
+      var c=String((e&&e.code)||ULT_ERRO||'');
+      var digitavel=/invalid-email|missing-password|weak-password/.test(c);
+      var senha=/invalid-credential|wrong-password|user-not-found|email-already-in-use/.test(c);
+      lgFalhas=senha?(lgFalhas+1):0;
+      if(!digitavel&&(!senha||lgFalhas>=2)){try{diagShow(true);}catch(x){}}
+    };
     if(lgMode==='up'){
       AUTH.auth.createUserWithEmailAndPassword(mail,pass).then(function(){
         try{AUTH.auth.currentUser.sendEmailVerification()['catch'](function(){});}catch(e){}
@@ -5091,7 +5112,7 @@ window.addEventListener('error',function(e){
       el('lgForm').classList.add('hidden');
       el('lgOff').classList.remove('hidden');
       el('lgOffTxt').textContent='Não consegui carregar o servidor da conta.';
-      try{el('lgDiagOpen2').onclick=diagShow;}catch(e){}
+      try{el('lgDiagOpen2').onclick=function(){diagShow(false);};}catch(e){}
       return;
     }
     lgBind();lgMode_('in');
