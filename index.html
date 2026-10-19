@@ -391,7 +391,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 26</span>
+<span class="vtag" style="z-index:80">versão 27</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -5474,7 +5474,40 @@ window.addEventListener('error',function(e){
     hloop(0);
   }
   var MODELBUF=null,modelOK=true;
+  /* ===== UM CORPO POR TIPO DE PACIENTE ====================================
+     ombro, quadril, meia-largura do ombro, meia-profundidade do tronco e o
+     centro dessa profundidade — tudo no corpo ja normalizado para 1,80.
+     'neutro' e a malha intacta, que foi onde a anatomia foi encaixada.     */
+  var MEDIDAS={"neutro":[0.5493,0.061,0.1812,0.1378,-0.0815],"bebe-m-magro":[0.4153,-0.0563,0.1778,0.1566,-0.0733],"bebe-m-normal":[0.4157,-0.0563,0.1779,0.167,-0.0629],"bebe-m-gordo":[0.4175,-0.0563,0.1838,0.1677,-0.0632],"crianca-m-magro":[0.4765,0.0082,0.1869,0.129,-0.0986],"crianca-m-normal":[0.4769,0.0082,0.1871,0.1323,-0.0958],"crianca-m-gordo":[0.4773,0.0082,0.1884,0.1334,-0.0944],"adolescente-m-magro":[0.5096,0.0398,0.1911,0.1261,-0.1075],"adolescente-m-normal":[0.5099,0.0398,0.1912,0.1288,-0.1053],"adolescente-m-gordo":[0.5099,0.0398,0.1912,0.1284,-0.1053],"adulto-m-magro":[0.5368,0.0657,0.1926,0.1226,-0.1171],"adulto-m-normal":[0.5368,0.0657,0.1926,0.126,-0.1145],"adulto-m-gordo":[0.5368,0.0657,0.1926,0.1259,-0.1146],"idoso-m-magro":[0.5405,0.0763,0.1894,0.126,-0.105],"idoso-m-normal":[0.5405,0.0763,0.1894,0.1302,-0.1008],"idoso-m-gordo":[0.5405,0.0763,0.1894,0.1333,-0.1016],"bebe-f-magro":[0.416,-0.0495,0.1734,0.1589,-0.0714],"bebe-f-normal":[0.4163,-0.0495,0.1734,0.1691,-0.0607],"bebe-f-gordo":[0.4179,-0.0495,0.1799,0.1703,-0.0595],"crianca-f-magro":[0.4831,0.0412,0.1684,0.126,-0.0984],"crianca-f-normal":[0.4832,0.0412,0.1685,0.1307,-0.0923],"crianca-f-gordo":[0.4827,0.0413,0.1719,0.1366,-0.0857],"adolescente-f-magro":[0.5129,0.0548,0.1697,0.1178,-0.0948],"adolescente-f-normal":[0.5129,0.0548,0.1697,0.1235,-0.0905],"adolescente-f-gordo":[0.5122,0.0549,0.1712,0.1318,-0.0839],"adulto-f-magro":[0.529,0.0382,0.175,0.1316,-0.0888],"adulto-f-normal":[0.529,0.0382,0.175,0.1382,-0.0851],"adulto-f-gordo":[0.529,0.0382,0.175,0.1423,-0.0826],"idoso-f-magro":[0.5292,0.0476,0.1774,0.1275,-0.1118],"idoso-f-normal":[0.5292,0.0476,0.1774,0.1379,-0.1036],"idoso-f-gordo":[0.5292,0.0476,0.1774,0.14,-0.1035]};
+  function faixaEtaria(a){
+    if(a==null)return 'adulto';
+    if(a<3)return 'bebe';
+    if(a<12)return 'crianca';
+    if(a<18)return 'adolescente';
+    if(a<65)return 'adulto';
+    return 'idoso';
+  }
+  function porteDoCorpo(faixa){
+    /* IMC so e interpretavel desse jeito no adulto. Em crianca e adolescente
+       o corte certo vem das curvas de IMC por idade da OMS, que este app
+       ainda nao tem — entao nao invento e fico no porte medio.            */
+    if(faixa==='bebe'||faixa==='crianca'||faixa==='adolescente')return 'normal';
+    var p=parseFloat(String((profile&&profile.peso)||'').replace(',','.'));
+    var h=parseFloat(String((profile&&profile.altura)||'').replace(',','.'));
+    if(!(p>0)||!(h>0))return 'normal';
+    if(h>3)h=h/100;
+    var imc=p/(h*h);
+    if(!(imc>0)||!isFinite(imc))return 'normal';
+    if(imc<18.5)return 'magro';
+    if(imc>=30)return 'gordo';
+    return 'normal';
+  }
+  function corpoChave(P){
+    var faixa=faixaEtaria(P&&P.age);
+    return faixa+'-'+((P&&P.female)?'f':'m')+'-'+porteDoCorpo(faixa);
+  }
   var CORPO_ARQ='corpo.glb';
+  var CORPO_CHAVE=null;      /* qual tipo de corpo esta carregado */
   var CORPO_NOVO=false;      /* true quando o corpo vestido foi carregado */
   function corpoEmbutido(){
     try{
@@ -5483,20 +5516,25 @@ window.addEventListener('error',function(e){
       return a.buffer;
     }catch(e){return null;}
   }
-  function loadBuf(cb){
-    if(MODELBUF){cb(MODELBUF);return;}
+  var MODELCACHE={};
+  function loadBuf(cb,chave){
+    chave=chave||'adulto-m-normal';
+    if(MODELCACHE[chave]){CORPO_CHAVE=chave;CORPO_NOVO=true;cb(MODELCACHE[chave]);return;}
     function embutido(){
-      CORPO_NOVO=false;MODELBUF=corpoEmbutido();cb(MODELBUF);
+      CORPO_NOVO=false;CORPO_CHAVE=null;
+      if(!MODELBUF)MODELBUF=corpoEmbutido();
+      cb(MODELBUF);
     }
-    var url=CORPO_ARQ;
-    try{url=new URL(CORPO_ARQ,location.href).href;}catch(e){}
+    var nome=MEDIDAS[chave]?('corpos/corpo-'+chave+'.glb'):CORPO_ARQ;
+    var url=nome;
+    try{url=new URL(nome,location.href).href;}catch(e){}
     var x;
     try{x=new XMLHttpRequest();x.open('GET',url,true);x.responseType='arraybuffer';}
     catch(e){embutido();return;}
     x.onerror=embutido;x.ontimeout=embutido;x.onabort=embutido;
     x.onload=function(){
       if(x.status>=400||!x.response||x.response.byteLength<64){embutido();return;}
-      CORPO_NOVO=true;MODELBUF=x.response;cb(MODELBUF);
+      CORPO_NOVO=true;CORPO_CHAVE=chave;MODELCACHE[chave]=x.response;cb(x.response);
     };
     try{x.send();}catch(e){embutido();}
   }
@@ -5704,9 +5742,10 @@ window.addEventListener('error',function(e){
     var lista=ANAT_GEO&&ANAT_GEO[id];
     if(lista&&lista.length){
       var g=new THREE.Group();
+      var enc=encaixeOrgaos();
       for(var i=0;i<lista.length;i++){
         /* clona: clearGroup descarta a geometria quando troca de aba */
-        var me=new THREE.Mesh(lista[i].g.clone());
+        var me=new THREE.Mesh(encaixaGeo(lista[i].g.clone(),enc));
         me.name=lista[i].n;
         g.add(me);
       }
@@ -5828,15 +5867,63 @@ window.addEventListener('error',function(e){
       emissiveIntensity:0.9,roughness:0.22,metalness:0.15,depthTest:false});
     if(!m.userData)m.userData={};m.userData.__lin=true;return m;
   }
+  /* A anatomia foi encaixada no corpo neutro. Num bebe ou num idoso o tronco
+     tem outra altura, outra largura e outra profundidade, entao os orgaos
+     precisam ser levados para la. O encaixe usa os marcos do esqueleto:
+     ombro, quadril e a profundidade do tronco medida numa faixa central.
+     As proporcoes internas seguem adultas — anatomia pediatrica de verdade
+     pediria um atlas pediatrico, que a base aberta nao tem.                */
+  function encaixeOrgaos(){
+    var r=MEDIDAS['neutro'], v=CORPO_CHAVE&&MEDIDAS[CORPO_CHAVE];
+    if(!r||!v)return null;
+    /* [ombro, quadril, meia-largura do ombro, meia-profundidade, centro dela] */
+    return {
+      ombroR:r[0], quadrilR:r[1], ombroV:v[0], quadrilV:v[1],
+      sx:v[2]/(r[2]||1),
+      sz:v[3]/(r[3]||1),
+      zcR:r[4], zcV:v[4]
+    };
+  }
+  /* O eixo vertical e dobrado em tres trechos: dos pes ao quadril, do
+     quadril ao ombro, e do ombro ao alto da cabeca. Cada trecho estica
+     pelo seu proprio fator. Assim o figado acompanha o tronco e o cerebro
+     acompanha o cranio — que numa crianca sao coisas bem diferentes.    */
+  function dobraY(y,e){
+    var PE=-0.90, TOPO=0.90;
+    if(y<e.quadrilR){
+      var k=(e.quadrilV-PE)/((e.quadrilR-PE)||1);
+      return PE+(y-PE)*k;
+    }
+    if(y<e.ombroR){
+      var k2=(e.ombroV-e.quadrilV)/((e.ombroR-e.quadrilR)||1);
+      return e.quadrilV+(y-e.quadrilR)*k2;
+    }
+    var k3=(TOPO-e.ombroV)/((TOPO-e.ombroR)||1);
+    return e.ombroV+(y-e.ombroR)*k3;
+  }
+  function encaixaGeo(geo,e){
+    if(!e||!geo||!geo.attributes||!geo.attributes.position)return geo;
+    var p=geo.attributes.position, a=p.array;
+    for(var i=0;i<a.length;i+=3){
+      a[i]   = a[i]*e.sx;
+      a[i+1] = dobraY(a[i+1],e);
+      a[i+2] = e.zcV+(a[i+2]-e.zcR)*e.sz;
+    }
+    p.needsUpdate=true;
+    try{ geo.computeVertexNormals(); geo.computeBoundingSphere(); }catch(err){}
+    return geo;
+  }
   function addOrgans(root,ys){
     markers=[];
     var ANAT=new THREE.Group();ANAT.scale.set(1,ys||1,1);ANAT.userData.noTint=true;root.add(ANAT);
+    var enc=encaixeOrgaos();
     Object.keys(SYS).forEach(function(id){
       var s=SYS[id];
       var og=organMesh(id),mat=organMaterial(id,s.status);
       pintaOrgaos(og,mat);
       ANAT.add(og);
       var mp=MARK_POS[id]||[0,0,0.05];
+      if(enc)mp=[mp[0]*enc.sx, dobraY(mp[1],enc), enc.zcV+(mp[2]-enc.zcR)*enc.sz];
       var core=new THREE.Mesh(new THREE.SphereGeometry(0.0155,18,14),markerMaterial(s.status));
       core.renderOrder=6;core.frustumCulled=false;
       var halo=new THREE.Group();
@@ -6121,6 +6208,7 @@ window.addEventListener('error',function(e){
         }
         if(o.name==='cabelo'){
           var mc=materialPeca('cabelo');
+          try{ if(P.hairColor)mc.color.copy(SC(new THREE.Color(P.hairColor).getHex())); }catch(e){}
           if(!dressed){           /* na tela dos orgaos o cabelo opaco tapava o cerebro */
             mc.transparent=true;mc.opacity=0.30;mc.depthWrite=false;
           }
@@ -6197,6 +6285,7 @@ window.addEventListener('error',function(e){
   }
   function loadInto(group,P,dressed,done){
     if(!modelOK){done(false);return;}
+    var chaveP=corpoChave(P);
     loadBuf(function(buf){
       if(!buf){done(false);return;}
       try{
@@ -6204,7 +6293,10 @@ window.addEventListener('error',function(e){
           try{
             var root=gltf.scene;tintModel(root,P,!!dressed);
             var box=new THREE.Box3().setFromObject(root);var c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
-            var base=5.6/(sz.y||1)*(P.scale||1);
+            /* P.scale encolhia o boneco antigo para sugerir bebe ou crianca.
+               O corpo novo ja e de bebe: encolher de novo deixava ele do
+               tamanho de uma formiga na tela. */
+            var base=5.6/(sz.y||1)*(CORPO_NOVO?1:(P.scale||1));
             root.scale.setScalar(base);
             root.position.set(-c.x*base,-c.y*base,-c.z*base);
             var mixer=null;
@@ -6213,7 +6305,7 @@ window.addEventListener('error',function(e){
           }catch(e){done(false);}
         },function(){done(false);});
       }catch(e){done(false);}
-    });
+    },chaveP);
   }
 
   var homeRoot=null,hMixer=null,hClock=new THREE.Clock();
@@ -6224,8 +6316,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 26 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 26 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 27 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 27 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
