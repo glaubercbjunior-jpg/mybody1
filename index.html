@@ -172,7 +172,13 @@
   .fisfonte{margin-top:9px;font-size:10.5px;color:#8b98a0;line-height:1.5;}
   .fisnota{margin-top:9px;font-size:11.5px;color:#5f7079;line-height:1.55;padding-left:13px;position:relative;}
   .fisnota::before{content:'•';position:absolute;left:2px;color:#b9c3ca;}
-  .fisin{display:flex;align-items:center;gap:8px;margin-top:9px;}
+  .fisop{margin:10px 0}
+.fisop>label{display:block;font-size:13px;color:#5a6472;margin-bottom:6px}
+.fisseg{display:flex;gap:6px;flex-wrap:wrap}
+.fisseg button{flex:1;min-width:92px;padding:9px 6px;border:1px solid #dfe4ea;background:#fff;
+  border-radius:10px;font-size:13px;color:#39414d;cursor:pointer}
+.fisseg button.on{background:#e10600;border-color:#e10600;color:#fff;font-weight:600}
+.fisin{display:flex;align-items:center;gap:8px;margin-top:9px;}
   .fisin label{flex:1;font-size:13px;color:#44525b;}
   .fisin .un{font-size:11.5px;color:#8b98a0;width:72px;text-align:right;}
   .fisin input{width:98px;border:1px solid #e2e4e9;background:#fff;border-radius:11px;
@@ -391,7 +397,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 27</span>
+<span class="vtag" style="z-index:80">versão 28</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -6316,8 +6322,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 27 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 27 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 28 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 28 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6492,7 +6498,170 @@ window.addEventListener('error',function(e){
     }
     return r;
   }
+
+  /* ===== FIGADO ==========================================================
+     Valor R — EASL, Diretriz de lesao hepatica por farmacos (2019)
+     FIB-4   — Sterling e cols., Hepatology 2006; cortes da AASLD 2023
+     Child-Pugh — Pugh e cols., Br J Surg 1973, adaptado ao INR
+     MELD 3.0   — Kim e cols., Gastroenterology 2021 (versao usada pela OPTN)
+     ====================================================================== */
+  function valorR(tgp,fa,lsnTgp,lsnFa){
+    if(tgp==null||fa==null||!(lsnTgp>0)||!(lsnFa>0))return null;
+    var a=tgp/lsnTgp, b=fa/lsnFa;
+    if(!(b>0))return null;
+    var R=a/b;
+    var p = R>=5 ? {c:'Padrão hepatocelular',d:'R de '+numBR(R,1)}
+          : (R<=2 ? {c:'Padrão colestático',d:'R de '+numBR(R,1)}
+                  : {c:'Padrão misto',d:'R de '+numBR(R,1)});
+    return {R:R, vezesTgp:a, vezesFa:b, c:p.c, d:p.d};
+  }
+  function fib4(idade,tgo,tgp,plaq){
+    if(idade==null||!(tgo>0)||!(tgp>0)||!(plaq>0))return null;
+    return (idade*tgo)/(plaq*Math.sqrt(tgp));
+  }
+  function classeFib4(f,idade){
+    /* Acima de 65 anos o FIB-4 perde especificidade e o corte de baixo
+       risco sobe de 1,3 para 2,0 (AASLD 2023). O corte alto segue 2,67. */
+    var baixo=(idade!=null&&idade>65)?2.0:1.3;
+    if(f<baixo) return {c:'Fibrose avançada improvável',d:'FIB-4 abaixo de '+numBR(baixo,baixo===2?1:1),st:'ok'};
+    if(f<=2.67) return {c:'FIB-4 indeterminado',d:'pede elastografia ou ELF',st:'warn'};
+    return {c:'Risco de fibrose avançada',d:'FIB-4 acima de 2,67',st:'alert'};
+  }
+  function childPugh(bt,alb,inr,ascite,encef){
+    if(bt==null||alb==null||inr==null||ascite==null||encef==null)return null;
+    var p=0;
+    p += bt<2 ? 1 : (bt<=3 ? 2 : 3);
+    p += alb>3.5 ? 1 : (alb>=2.8 ? 2 : 3);
+    /* As fontes divergem aqui: a versao mais citada da 3 pontos acima de 2,3,
+       o StatPearls acima de 2,2. Uso a mais citada e aviso o medico quando o
+       INR cai justamente na faixa em que as duas discordam. */
+    p += inr<1.7 ? 1 : (inr<=2.3 ? 2 : 3);
+    p += [1,2,3][ascite]||1;
+    p += [1,2,3][encef]||1;
+    var cl = p<=6 ? 'A' : (p<=9 ? 'B' : 'C');
+    return {pontos:p, classe:cl, duvida:(inr>2.2&&inr<=2.3),
+            st: cl==='A' ? 'warn' : 'alert'};
+  }
+  function meld3(bt,inr,creat,alb,na,fem){
+    if(bt==null||inr==null||creat==null||alb==null||na==null)return null;
+    var b=Math.max(1,bt), i=Math.max(1,inr);
+    var c=Math.max(1,Math.min(3,creat));
+    var a=Math.max(1.5,Math.min(3.5,alb));
+    var s=Math.max(125,Math.min(137,na));
+    var m=(fem?1.33:0)
+        + 4.56*Math.log(b)
+        + 0.82*(137-s)
+        - 0.24*(137-s)*Math.log(b)
+        + 9.09*Math.log(i)
+        + 11.14*Math.log(c)
+        + 1.85*(3.5-a)
+        - 1.83*(3.5-a)*Math.log(c)
+        + 6;
+    return Math.max(6,Math.min(40,Math.round(m)));
+  }
+
   var FISIO={
+    gastro:{
+      titulo:'Avaliação hepática',
+      campos:[
+        {k:'tgp', rot:'TGP / ALT',un:'U/L',min:1,max:20000,casas:0,req:true,ph:'ex.: 68'},
+        {k:'tgo', rot:'TGO / AST',un:'U/L',min:1,max:20000,casas:0,ph:'ex.: 54'},
+        {k:'fa',  rot:'Fosfatase alcalina',un:'U/L',min:1,max:5000,casas:0,ph:'ex.: 140'},
+        {k:'ltgp',rot:'LSN da TGP no seu laboratório',un:'U/L',min:5,max:200,casas:0,pad:40},
+        {k:'lfa', rot:'LSN da fosfatase alcalina',un:'U/L',min:20,max:500,casas:0,pad:120},
+        {k:'plaq',rot:'Plaquetas',un:'mil/mm³',min:5,max:1500,casas:0,ph:'ex.: 160'},
+        {k:'bt',  rot:'Bilirrubina total',un:'mg/dL',min:0.1,max:60,casas:2,ph:'opcional'},
+        {k:'alb', rot:'Albumina',un:'g/dL',min:0.5,max:6,casas:1,ph:'opcional'},
+        {k:'inr', rot:'INR',un:'',min:0.5,max:10,casas:2,ph:'opcional'},
+        {k:'nav', rot:'Sódio',un:'mEq/L',min:100,max:170,casas:0,ph:'para o MELD'},
+        {k:'crt', rot:'Creatinina',un:'mg/dL',min:0.1,max:30,casas:2,ph:'para o MELD'},
+        {k:'asc', rot:'Ascite',un:'',min:0,max:2,casas:0,
+         opcoes:[[0,'Ausente'],[1,'Leve'],[2,'Moderada ou refratária']]},
+        {k:'enc', rot:'Encefalopatia',un:'',min:0,max:2,casas:0,
+         opcoes:[[0,'Ausente'],[1,'Grau I–II'],[2,'Grau III–IV']]}
+      ],
+      fonte:'Valor R: EASL, lesão hepática por fármacos (2019) · FIB-4: Sterling, Hepatology 2006, com os cortes da AASLD 2023 · Child-Pugh: Pugh, Br J Surg 1973, adaptado ao INR · MELD 3.0: Kim, Gastroenterology 2021 (o que a OPTN usa)',
+      calc:function(v,hist){
+        var idade=getAge();
+        var fem=!!(profile&&profile.sexo==='Feminino');
+        if(v.tgp==null||isNaN(v.tgp))return {erro:'Informe a TGP (ALT) em U/L.'};
+
+        var tags=[],notas=[],status='ok',principal=null,serie=null,serieRot=null,conta='',risco=null;
+
+        /* --- padrao da lesao ------------------------------------------ */
+        var R=valorR(v.tgp,v.fa,v.ltgp||40,v.lfa||120);
+        /* O valor R so quer dizer alguma coisa quando ha lesao: a EASL o usa
+           para classificar o padrao de um caso, nao para rotular exames
+           normais. Com TGP 45 e FA 140 a conta da 'colestatico', o que seria
+           um rotulo sem sentido num exame praticamente normal. */
+        if(R&&R.vezesTgp<=1&&R.vezesFa<=1)R=null;
+        if(R){
+          tags.push({t:R.c,d:R.d});
+          conta='R = (TGP '+numBR(v.tgp,0)+' ÷ '+numBR(v.ltgp||40,0)+') ÷ (FA '+numBR(v.fa,0)+' ÷ '+numBR(v.lfa||120,0)+') = '+numBR(R.R,2);
+          if(R.vezesTgp>=5||R.vezesFa>=2)status=piorStatus(status,'alert');
+          else if(R.vezesTgp>1||R.vezesFa>1)status=piorStatus(status,'warn');
+          if(R.vezesTgp>=5)notas.push('TGP em '+numBR(R.vezesTgp,1)+' vezes o limite superior: pela EASL, já é o patamar que define um caso de lesão hepática por fármaco, se houver exposição.');
+          else if(v.bt!=null&&R.vezesTgp>=3&&v.bt>2)notas.push('TGP acima de 3 vezes o limite com bilirrubina acima de 2 mg/dL: é a combinação que a EASL usa como critério de caso, e que a lei de Hy associa a pior prognóstico.');
+        } else if(v.tgp>(v.ltgp||40)){
+          status=piorStatus(status,'warn');
+          notas.push('Informe a fosfatase alcalina para o app classificar o padrão da lesão (hepatocelular, colestático ou misto).');
+        }
+
+        /* --- fibrose --------------------------------------------------- */
+        var F=fib4(idade,v.tgo,v.tgp,v.plaq);
+        if(F!=null&&idade!=null&&idade>=18){
+          var CF=classeFib4(F,idade);
+          tags.push({t:CF.c,d:CF.d});
+          status=piorStatus(status,CF.st);
+          principal={val:numBR(F,2),un:'',rot:'FIB-4'};
+          serie=F; serieRot='FIB-4 ao longo do tempo';
+          conta=(conta?conta+'  ·  ':'')+'FIB-4 = ('+idade+' × TGO '+numBR(v.tgo,0)+') ÷ ('+numBR(v.plaq,0)+' × √'+numBR(v.tgp,0)+') = '+numBR(F,2);
+          if(idade>65)notas.push('Acima de 65 anos o FIB-4 perde especificidade, então o corte de baixo risco sobe de 1,3 para 2,0. O corte alto segue 2,67.');
+          if(CF.st==='warn')notas.push('FIB-4 na faixa indeterminada não decide nada sozinho: a AASLD recomenda seguir com elastografia hepática ou com o teste ELF.');
+        } else if(F!=null&&idade!=null&&idade<18){
+          notas.push('O FIB-4 foi desenvolvido e validado em adultos; não calculei para menores de 18 anos.');
+        } else if(idade==null){
+          notas.push('Preencha a data de nascimento do paciente — o FIB-4 usa a idade.');
+        }
+
+        /* --- gravidade da cirrose -------------------------------------- */
+        var CP=childPugh(v.bt,v.alb,v.inr,v.asc,v.enc);
+        if(CP){
+          tags.push({t:'Child-Pugh '+CP.classe,d:CP.pontos+' pontos'});
+          status=piorStatus(status,CP.st);
+          if(CP.duvida)notas.push('INR entre 2,2 e 2,3: é a única faixa em que as fontes do Child-Pugh divergem. Usei o corte mais citado (3 pontos acima de 2,3); pelo StatPearls seria 1 ponto a mais, o que pode mudar a classe.');
+          if(!principal)principal={val:'Child '+CP.classe,un:'',rot:CP.pontos+' pontos'};
+        } else if(v.bt!=null&&v.alb!=null&&v.inr!=null){
+          notas.push('Para o Child-Pugh faltam ascite e encefalopatia — são achados do exame, não do laboratório, por isso o app pergunta.');
+        }
+
+        /* --- prognostico na cirrose ------------------------------------ */
+        if(idade!=null&&idade>=18){
+          var M=meld3(v.bt,v.inr,v.crt,v.alb,v.nav,fem);
+          if(M!=null){
+            tags.push({t:'MELD 3.0 '+M,d:'prognóstico em 90 dias'});
+            if(M>=15)status=piorStatus(status,'alert');
+            else if(M>=11)status=piorStatus(status,'warn');
+            risco='MELD 3.0 de '+M+(M>=15?' — a partir de 15 o transplante costuma passar a trazer benefício de sobrevida':'');
+            if(v.crt>3)notas.push('Creatinina acima de 3,0 mg/dL entra no MELD como 3,0 — é o teto da equação.');
+            if(v.nav<125||v.nav>137)notas.push('O sódio entra no MELD limitado à faixa de 125 a 137 mEq/L.');
+          }
+        } else if(idade!=null&&idade<18){
+          notas.push('O MELD 3.0 que implementei é o de 18 anos ou mais. Existe uma equação para 12 a 17 anos, mas eu não consegui confirmá-la em fonte primária e preferi não arriscar.');
+        }
+
+        if(!principal){
+          principal={val:numBR(v.tgp,0),un:'U/L',rot:'TGP'};
+          serie=v.tgp; serieRot='TGP ao longo do tempo (U/L)';
+        }
+        notas.push('Transaminases normais não excluem doença hepática: boa parte da cirrose compensada cursa com enzimas normais.');
+
+        return {principal:principal,serie:serie,serieRot:serieRot,
+                bruto:{fib4:F,meld:(idade!=null&&idade>=18)?meld3(v.bt,v.inr,v.crt,v.alb,v.nav,fem):null,
+                       child:CP?CP.pontos:null,R:R?R.R:null},
+                tags:tags,risco:risco,status:status,conta:conta,notas:notas};
+      }
+    },
     resp:{
       titulo:'Avaliação respiratória',
       campos:[
@@ -6676,7 +6845,14 @@ window.addEventListener('error',function(e){
       var o=u.out, uv=u.v||{};
       var tags=(o.tags||[]).map(function(t){return '<span class="fistag"><b>'+esc(t.t)+'</b><span>'+esc(t.d||'')+'</span></span>';}).join('');
       var ent=M.campos.filter(function(c){return uv[c.k]!=null&&!isNaN(uv[c.k]);})
-               .map(function(c){return esc(c.rot.toLowerCase())+' '+numBR(uv[c.k],c.casas==null?2:c.casas)+' '+esc(c.un);}).join(' · ');
+               .map(function(c){
+                 if(c.opcoes){
+                   var achou=null;
+                   c.opcoes.forEach(function(o){if(+o[0]===+uv[c.k])achou=o[1];});
+                   return esc(c.rot.toLowerCase())+' '+esc(achou||uv[c.k]);
+                 }
+                 return esc(c.rot.toLowerCase())+' '+numBR(uv[c.k],c.casas==null?2:c.casas)+' '+esc(c.un);
+               }).join(' · ');
       html+='<div class="fispanel">'+
         '<div class="fisbig"><span class="v">'+esc(o.principal.val)+'</span><span class="u">'+esc(o.principal.un||'')+'</span></div>'+
         '<div class="fisrot">'+esc(o.principal.rot||'')+' · '+esc(u.date||'')+'</div>'+
@@ -6697,9 +6873,18 @@ window.addEventListener('error',function(e){
 
     html+='<div class="seclab">'+(u?'Nova avaliação':'Lançar os dados')+'</div>';
     html+=M.campos.map(function(c){
+      if(c.opcoes){
+        /* ascite e encefalopatia nao sao numeros: viram botoes */
+        return '<div class="fisop"><label>'+esc(c.rot)+'</label>'+
+          '<div class="fisseg" id="fis_'+c.k+'" data-v="">'+
+          c.opcoes.map(function(o){
+            return '<button type="button" data-v="'+o[0]+'">'+esc(o[1])+'</button>';
+          }).join('')+'</div></div>';
+      }
       return '<div class="fisin"><label for="fis_'+c.k+'">'+esc(c.rot)+'</label>'+
         /* texto, nao number: campo number recusa virgula, e aqui se digita 1,40 */
         '<input id="fis_'+c.k+'" type="text" inputmode="decimal" autocomplete="off" '+
+        (c.pad!=null?'value="'+esc(numBR(c.pad,c.casas==null?2:c.casas))+'" ':'')+
         'placeholder="'+esc(c.ph||'')+'">'+
         '<span class="un">'+esc(c.un)+'</span></div>';
     }).join('');
@@ -6748,6 +6933,11 @@ window.addEventListener('error',function(e){
       var salvar=function(){
         var v={},faltou=null;
         M.campos.forEach(function(c){
+          if(c.opcoes){
+            var seg=el('fis_'+c.k), esc_=seg?seg.getAttribute('data-v'):'';
+            if(esc_===''||esc_==null){ if(c.req)faltou=faltou||c; v[c.k]=null; return; }
+            v[c.k]=parseFloat(esc_); return;
+          }
           var raw=(el('fis_'+c.k).value||'').trim().replace(',','.');
           if(raw===''){ if(c.req)faltou=faltou||c; v[c.k]=null; return; }
           var n=parseFloat(raw);
@@ -6771,7 +6961,19 @@ window.addEventListener('error',function(e){
       };
       el('fisGo').onclick=salvar;
       M.campos.forEach(function(c){
-        el('fis_'+c.k).addEventListener('keydown',function(e){if(e.key==='Enter')salvar();});
+        var e0=el('fis_'+c.k);
+        if(!e0)return;
+        if(c.opcoes){
+          [].forEach.call(e0.querySelectorAll('button'),function(b){
+            b.onclick=function(){
+              [].forEach.call(e0.querySelectorAll('button'),function(x){x.classList.remove('on');});
+              b.classList.add('on');
+              e0.setAttribute('data-v',b.dataset.v);
+            };
+          });
+          return;
+        }
+        e0.addEventListener('keydown',function(ev){if(ev.key==='Enter')salvar();});
       });
     }
   }
