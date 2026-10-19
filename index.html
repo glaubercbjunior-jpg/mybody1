@@ -399,7 +399,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 29</span>
+<span class="vtag" style="z-index:80">versão 30</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -5960,6 +5960,11 @@ window.addEventListener('error',function(e){
     '#else',
     '  vec3 pele = uSkin;',
     '#endif',
+    // este codigo substitui a cor calculada pelo three.js, entao a textura
+    // do rosto tem que ser amostrada aqui de novo, ou ela se perde
+    '#ifdef USE_MAP',
+    '  pele *= mapTexelToLinear( texture2D( map, vUv ) ).rgb;',
+    '#endif',
     '  if(uMode > 0.5){',
     '   if(uNovo > 0.5){',
     '    diffuseColor.rgb = pele;',
@@ -6003,7 +6008,7 @@ window.addEventListener('error',function(e){
         sh.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n'+BODY_FRAG);
       mat.userData.shader=sh;
     };
-    mat.customProgramCacheKey=function(){return 'mybody-'+mode+'-'+(novo?1:0)+'-'+(mat.vertexColors?1:0);};
+    mat.customProgramCacheKey=function(){return 'mybody-'+mode+'-'+(novo?1:0)+'-'+(mat.vertexColors?1:0)+'-'+(mat.map?1:0);};
     return mat;
   }
   function skinMaterial(hex,seeThrough){
@@ -6187,6 +6192,24 @@ window.addEventListener('error',function(e){
   }
   /* pecas do corpo novo. O cabelo fica em cena nas duas telas; a roupa so
      na tela inicial, porque na tela dos orgaos ela esconderia tudo.        */
+  /* A textura do rosto e a mesma para os 30 corpos: topologia identica,
+     UV identico. Carrega uma vez e serve a todos.                        */
+  var ROSTO_ARQ='rosto.jpg', ROSTO_TEX=null;
+  function rostoTextura(){
+    if(ROSTO_TEX!==null)return ROSTO_TEX;
+    try{
+      var url=ROSTO_ARQ;
+      try{url=new URL(ROSTO_ARQ,location.href).href;}catch(e){}
+      var t=new THREE.TextureLoader().load(url,function(){},undefined,function(){ROSTO_TEX=false;});
+      if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;
+      t.flipY=false;                /* glTF ja vem com o V invertido */
+      ROSTO_TEX=t;
+    }catch(e){ROSTO_TEX=false;}
+    return ROSTO_TEX;
+  }
+  /* olho: esclera, iris, pupila e o ponto de luz, cada um com geometria
+     propria. Cor por vertice numa esfera de 564 pontos nao desenha pupila. */
+  var PECA_OLHO={olhos:1,iris:1,iris_2:1,pupila:1,pupila_2:1,brilho:1,brilho_2:1};
   var PECA_ROUPA={camiseta:1,calca:1,sapato:1};
   var COR_PECA={cabelo:0x2a2119,camiseta:0x4d7a9c,calca:0x343b4c,sapato:0x24272f};
   function materialPeca(nome){
@@ -6211,8 +6234,13 @@ window.addEventListener('error',function(e){
     meshes.forEach(function(o){
       {
         o.frustumCulled=false;
-        if(o.name==='olhos'){
-          o.material=materialOlhos();o.renderOrder=2;o.visible=true;return;
+        if(PECA_OLHO[o.name]){
+          var mo=materialOlhos();
+          if(o.name.indexOf('brilho')===0){
+            /* o ponto de luz nao recebe sombra: ele E a luz */
+            mo.emissive=SC(0xffffff);mo.emissiveIntensity=0.55;
+          }
+          o.material=mo;o.renderOrder=(o.name==='olhos'?2:3);o.visible=true;return;
         }
         if(o.name==='cabelo'){
           var mc=materialPeca('cabelo');
@@ -6226,6 +6254,8 @@ window.addEventListener('error',function(e){
           o.material=materialPeca(o.name);o.renderOrder=2;o.visible=!!dressed;return;
         }
         var temCor=!!(o.geometry.attributes&&o.geometry.attributes.color);
+        var mapaRosto=(CORPO_NOVO&&o.geometry.attributes&&o.geometry.attributes.uv)
+                      ? rostoTextura() : null;
         /* o corpo novo ja vem na proporcao certa; o esticao de 3,5% era um
            apuro do corpo antigo, que nao tinha como distinguir os sexos */
         if(!CORPO_NOVO){
@@ -6235,6 +6265,7 @@ window.addEventListener('error',function(e){
           var md=skinMaterial(P.skin,false);
           md.userData.__lin=true;
           md.vertexColors=temCor;
+          if(mapaRosto)md.map=mapaRosto;
           try{ bodyShader(md,1.0,P.skin,sex!=='M',1.0,CORPO_NOVO); }
           catch(e){ try{ dressGeo(o.geometry,sex,P.skin); md.vertexColors=true; md.color.setRGB(1,1,1); }catch(e2){} }
           o.material=md;o.renderOrder=1;
@@ -6245,6 +6276,7 @@ window.addEventListener('error',function(e){
         mt.userData.__lin=true;
         mt.opacity=1.0;
         mt.vertexColors=temCor;
+        if(mapaRosto)mt.map=mapaRosto;
         try{ bodyShader(mt,0.0,P.skin,sex!=='M',0.30,CORPO_NOVO); }catch(e){ mt.opacity=0.5; }
         o.material=mt;
         o.renderOrder=3;
@@ -6324,8 +6356,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 29 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 29 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 30 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 30 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
