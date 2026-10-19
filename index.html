@@ -399,7 +399,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 31</span>
+<span class="vtag" style="z-index:80">versão 32</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -5946,10 +5946,45 @@ window.addEventListener('error',function(e){
     try{ geo.computeVertexNormals(); geo.computeBoundingSphere(); }catch(err){}
     return geo;
   }
+  /* ESQUELETO DE FUNDO.
+     Nao e um sistema que se escolhe: e a referencia que da escala aos
+     orgaos. Sem osso, o coracao flutua no vazio e nao da para dizer se
+     esta atras do esterno ou do umbigo — a costela, a coluna e a bacia
+     sao justamente o que um medico usa para localizar o resto.
+
+     Fica sempre visivel, em cinza, atras de qualquer sistema escolhido.
+     depthWrite:false com depthTest ligado e o que o poe atras: o osso
+     continua sendo recortado pela profundidade dos orgaos, entao some
+     onde um orgao passa na frente, mas nunca desenha por cima dele.      */
+  function ossoMaterial(){
+    /* tom de osso, nao cinza azulado: no primeiro teste a costela saia
+       da mesma familia de azul do pulmao e era lida como parte do
+       sistema respiratorio, que e exatamente o contrario do que o fundo
+       deve fazer. */
+    var c=SC(0xcac2b2);
+    var m=new THREE.MeshStandardMaterial({color:c,roughness:0.72,metalness:0.0,
+      emissive:c.clone().multiplyScalar(0.26),emissiveIntensity:0.45,
+      transparent:true,opacity:0.30,depthWrite:false});
+    m.userData={__lin:true};
+    return m;
+  }
+  function ossoMesh(){
+    var lista=ANAT_GEO&&ANAT_GEO.osso;
+    if(!lista||!lista.length)return null;      /* sem o arquivo, simplesmente nao tem osso */
+    var g=new THREE.Group(),enc=encaixeOrgaos();
+    for(var i=0;i<lista.length;i++){
+      var me=new THREE.Mesh(encaixaGeo(lista[i].g.clone(),enc),ossoMaterial());
+      me.name=lista[i].n;me.renderOrder=0;me.frustumCulled=false;
+      g.add(me);
+    }
+    return g;
+  }
   function addOrgans(root,ys){
     markers=[];
     var ANAT=new THREE.Group();ANAT.scale.set(1,ys||1,1);ANAT.userData.noTint=true;root.add(ANAT);
     var enc=encaixeOrgaos();
+    var ossos=ossoMesh();
+    if(ossos)ANAT.add(ossos);
     Object.keys(SYS).forEach(function(id){
       var s=SYS[id];
       var og=organMesh(id),mat=organMaterial(id,s.status);
@@ -6381,8 +6416,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 31 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 31 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 32 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 32 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
