@@ -178,6 +178,8 @@
 .fisseg button{flex:1;min-width:92px;padding:9px 6px;border:1px solid #dfe4ea;background:#fff;
   border-radius:10px;font-size:13px;color:#39414d;cursor:pointer}
 .fisseg button.on{background:#e10600;border-color:#e10600;color:#fff;font-weight:600}
+.fisseg.col{flex-direction:column}
+.fisseg.col button{text-align:left;min-width:0}
 .fisin{display:flex;align-items:center;gap:8px;margin-top:9px;}
   .fisin label{flex:1;font-size:13px;color:#44525b;}
   .fisin .un{font-size:11.5px;color:#8b98a0;width:72px;text-align:right;}
@@ -397,7 +399,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 28</span>
+<span class="vtag" style="z-index:80">versão 29</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -6322,8 +6324,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 28 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 28 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 29 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 29 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6560,7 +6562,99 @@ window.addEventListener('error',function(e){
     return Math.max(6,Math.min(40,Math.round(m)));
   }
 
+
+  /* ===== NEUROLOGICO =====================================================
+     MEEM: Folstein 1975; valores brasileiros de Brucki e cols., Arq
+     Neuropsiquiatr 2003. Sao MEDIANAS por escolaridade — o proprio artigo
+     diz que optou por nao delimitar pontos de corte. O app trata como
+     mediana esperada, nunca como corte diagnostico.
+     Rankin modificada: van Swieten e cols., Stroke 1988.
+     ====================================================================== */
+  var MEEM_MEDIANA=[20,25,26.5,28,29];
+  var MEEM_ESC=['analfabeto','1 a 4 anos de estudo','5 a 8 anos de estudo',
+                '9 a 11 anos de estudo','mais de 11 anos de estudo'];
+  function meemFaixa(pontos,escolaridade){
+    if(pontos==null||escolaridade==null)return null;
+    var med=MEEM_MEDIANA[escolaridade];
+    if(med==null)return null;
+    var dif=pontos-med;
+    if(dif>=0)   return {c:'Dentro do esperado',d:'mediana '+numBR(med,med%1?1:0)+' para '+MEEM_ESC[escolaridade],st:'ok',dif:dif,med:med};
+    if(dif>=-3)  return {c:'Abaixo da mediana',d:numBR(Math.abs(dif),Math.abs(dif)%1?1:0)+' ponto(s) abaixo da mediana da escolaridade',st:'warn',dif:dif,med:med};
+    return {c:'Bem abaixo da mediana',d:numBR(Math.abs(dif),Math.abs(dif)%1?1:0)+' pontos abaixo da mediana da escolaridade',st:'alert',dif:dif,med:med};
+  }
+  var RANKIN=[
+    'Sem sintomas',
+    'Sintomas sem incapacidade: faz tudo o que fazia antes',
+    'Incapacidade leve: não faz tudo o que fazia, mas cuida de si sem ajuda',
+    'Incapacidade moderada: precisa de alguma ajuda, mas anda sem auxílio',
+    'Incapacidade moderada a grave: não anda sem auxílio nem cuida de si sozinho',
+    'Incapacidade grave: acamado, incontinente, cuidados constantes',
+    'Óbito'
+  ];
+  function classeRankin(r){
+    if(r==null)return null;
+    var st = r<=1 ? 'ok' : (r<=3 ? 'warn' : 'alert');
+    return {c:'Rankin '+r,d:RANKIN[r]||'',st:st};
+  }
+
   var FISIO={
+    snc:{
+      titulo:'Avaliação neurológica',
+      campos:[
+        {k:'meem',rot:'MEEM (Mini-Exame do Estado Mental)',un:'de 0 a 30',min:0,max:30,casas:0,ph:'ex.: 24'},
+        {k:'esc', rot:'Escolaridade',un:'',min:0,max:4,casas:0,
+         opcoes:[[0,'Analfabeto'],[1,'1 a 4 anos'],[2,'5 a 8 anos'],[3,'9 a 11 anos'],[4,'Mais de 11']]},
+        {k:'rnk', rot:'Escala de Rankin modificada',un:'',min:0,max:6,casas:0,coluna:true,
+         opcoes:[[0,'0 — sem sintomas'],
+                 [1,'1 — sintomas, sem incapacidade'],
+                 [2,'2 — incapacidade leve'],
+                 [3,'3 — incapacidade moderada'],
+                 [4,'4 — moderada a grave'],
+                 [5,'5 — grave, acamado'],
+                 [6,'6 — óbito']]}
+      ],
+      fonte:'MEEM: Folstein 1975, com os valores brasileiros de Brucki e cols., Arq Neuropsiquiatr 2003 (medianas por escolaridade) · Rankin modificada: van Swieten e cols., Stroke 1988',
+      calc:function(v,hist){
+        if((v.meem==null||isNaN(v.meem))&&(v.rnk==null||isNaN(v.rnk)))
+          return {erro:'Informe o MEEM, a escala de Rankin, ou os dois.'};
+
+        var tags=[],notas=[],status='ok',principal=null,serie=null,serieRot=null,conta='',risco=null;
+
+        if(v.meem!=null&&!isNaN(v.meem)){
+          if(v.esc==null||isNaN(v.esc))
+            return {erro:'Escolha a escolaridade — no Brasil o MEEM só se interpreta à luz dos anos de estudo.'};
+          var F=meemFaixa(v.meem,v.esc);
+          tags.push({t:F.c,d:F.d});
+          status=piorStatus(status,F.st);
+          principal={val:numBR(v.meem,0),un:'de 30',rot:'MEEM'};
+          serie=v.meem; serieRot='MEEM ao longo do tempo (de 0 a 30)';
+          conta='MEEM '+numBR(v.meem,0)+' contra a mediana de '+numBR(F.med,F.med%1?1:0)+
+                ' para '+MEEM_ESC[v.esc]+' (Brucki e cols., 2003)';
+          notas.push('Estes valores são MEDIANAS por escolaridade, não pontos de corte: o próprio artigo de Brucki optou por não delimitar corte diagnóstico. Estar abaixo da mediana não fecha diagnóstico, e estar acima não exclui.');
+          notas.push('O MEEM é rastreio, não diagnóstico. Demência se diagnostica com história, exame, avaliação funcional e exclusão de causas reversíveis.');
+          var T=tendenciaAno(hist,v.meem,Date.now());
+          if(T&&T.porAno<=-1)
+            notas.push('O MEEM vem caindo cerca de '+numBR(Math.abs(T.porAno),1)+' ponto(s) por ano — medido ao longo de '+numBR(T.meses,0)+' meses, com '+T.n+' avaliações. A queda ao longo do tempo diz mais que um valor isolado.');
+          else if(T&&T.porAno>=1)
+            notas.push('O MEEM vem subindo cerca de '+numBR(T.porAno,1)+' ponto(s) por ano, ao longo de '+numBR(T.meses,0)+' meses. Vale conferir se houve mudança de examinador ou efeito de aprendizado do teste.');
+        }
+
+        if(v.rnk!=null&&!isNaN(v.rnk)){
+          var R=classeRankin(v.rnk);
+          tags.push({t:R.c,d:R.d});
+          status=piorStatus(status,R.st);
+          if(!principal){
+            principal={val:String(v.rnk),un:'de 6',rot:'Rankin modificada'};
+            serie=v.rnk; serieRot='Rankin modificada ao longo do tempo (0 a 6)';
+          }
+          if(v.rnk>=3)risco='Rankin '+v.rnk+' — dependência para as atividades do dia a dia';
+        }
+
+        return {principal:principal,serie:serie,serieRot:serieRot,
+                bruto:{meem:v.meem,rankin:v.rnk},
+                tags:tags,risco:risco,status:status,conta:conta,notas:notas};
+      }
+    },
     gastro:{
       titulo:'Avaliação hepática',
       campos:[
@@ -6874,9 +6968,9 @@ window.addEventListener('error',function(e){
     html+='<div class="seclab">'+(u?'Nova avaliação':'Lançar os dados')+'</div>';
     html+=M.campos.map(function(c){
       if(c.opcoes){
-        /* ascite e encefalopatia nao sao numeros: viram botoes */
+        /* ascite, escolaridade e Rankin nao sao numeros: viram botoes */
         return '<div class="fisop"><label>'+esc(c.rot)+'</label>'+
-          '<div class="fisseg" id="fis_'+c.k+'" data-v="">'+
+          '<div class="fisseg'+(c.coluna?' col':'')+'" id="fis_'+c.k+'" data-v="">'+
           c.opcoes.map(function(o){
             return '<button type="button" data-v="'+o[0]+'">'+esc(o[1])+'</button>';
           }).join('')+'</div></div>';
