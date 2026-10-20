@@ -135,8 +135,12 @@
   svg.shico{width:30px;height:30px;flex:none;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
   .av-legend .d{width:8px;height:8px;border-radius:50%;}
   .reset{position:absolute;right:16px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:6;background:rgba(255,255,255,.9);color:var(--txt);border:1px solid var(--line);border-radius:99px;width:44px;height:44px;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow);}
-  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:#ffffff;color:#15242c;border-radius:22px 22px 0 0;box-shadow:0 -8px 40px rgba(20,30,40,.16);transform:translateY(calc(100% + 40px));transition:transform .42s cubic-bezier(.22,1,.36,1);padding:8px 18px calc(20px + env(safe-area-inset-bottom));max-height:74vh;overflow-y:auto;}
-  .sheet.open{transform:translateY(0);}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:#ffffff;color:#15242c;border-radius:22px 22px 0 0;box-shadow:0 -8px 40px rgba(20,30,40,.16);transform:translateY(calc(100% + 40px));transition:transform .42s cubic-bezier(.22,1,.36,1);padding:8px 18px calc(20px + env(safe-area-inset-bottom));max-height:74vh;overflow-y:auto;pointer-events:none;}
+  /* Fechada, a ficha continuava engolindo o toque no terco de baixo da
+     tela — justamente onde ficam as pernas e os pes. Nao se notava
+     enquanto so havia os pontos dos sistemas, todos no tronco; apareceu
+     ao marcar ferida na perna, que simplesmente nao marcava.           */
+  .sheet.open{transform:translateY(0);pointer-events:auto;}
   .grab{width:38px;height:4px;border-radius:99px;background:#dfe1e6;margin:6px auto 12px;}
   .shead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
   .shead .fr{font-size:19px;font-weight:600;letter-spacing:-.01em;} .shead .tech{font-size:12px;color:#5f7079;margin-top:1px;}
@@ -191,6 +195,45 @@
   .fisman{margin-top:8px;font-size:11.5px;color:#5f7079;}
   .fisman button{background:none;border:none;padding:0;font-family:inherit;font-size:11.5px;
                  color:var(--pink-deep);text-decoration:underline;cursor:pointer;}
+  .fbtn{position:absolute;right:14px;top:92px;width:42px;height:42px;border-radius:50%;border:1px solid #e3e7ed;
+    background:#fff;color:#c2302b;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 3px 12px rgba(16,31,42,.13);cursor:pointer;z-index:6;}
+  .fbtn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linejoin:round;}
+  .fbtn span{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:#e10600;
+    color:#fff;font:700 10px/18px system-ui,sans-serif;text-align:center;padding:0 4px;display:none;}
+  .fbtn span.on{display:block;}
+  .fmarcar{position:absolute;left:50%;transform:translateX(-50%);top:92px;z-index:7;background:#15242c;color:#fff;
+    border-radius:999px;padding:9px 8px 9px 16px;font:600 13px/1 system-ui,sans-serif;display:flex;align-items:center;gap:10px;
+    box-shadow:0 4px 16px rgba(16,31,42,.22);}
+  .fmarcar button{background:rgba(255,255,255,.17);color:#fff;border:0;border-radius:999px;padding:6px 11px;
+    font:600 12px system-ui,sans-serif;cursor:pointer;}
+  .flista{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+  .fcard{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid #e6eaf0;border-radius:13px;
+    padding:11px 12px;cursor:pointer;text-align:left;width:100%;}
+  .fcard .fpt{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+  .fcard .fnm{font-weight:700;color:#15242c;font-size:14px;}
+  .fcard .fsub{font-size:11.5px;color:#5f7079;margin-top:2px;}
+  .fcard .fval{margin-left:auto;text-align:right;font-size:11.5px;color:#5f7079;}
+  .fcard .fval b{display:block;font-size:15px;color:#15242c;}
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .fgrid .wide{grid-column:1 / -1;}
+  .fseg{display:flex;flex-wrap:wrap;gap:6px;}
+  .fseg button{flex:1 1 auto;min-width:64px;background:#fff;border:1px solid #dfe4ea;border-radius:9px;padding:8px 6px;
+    font:600 11.5px system-ui,sans-serif;color:#44555e;cursor:pointer;}
+  .fseg button.on{background:#15242c;border-color:#15242c;color:#fff;}
+  .fseg.col button{flex:1 1 100%;text-align:left;}
+  .ffoto{margin-top:8px;}
+  .ffoto img{width:100%;border-radius:11px;display:block;border:1px solid #e6eaf0;}
+  .ffotob{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11.5px;color:#5f7079;}
+  .ffotob label{background:#fff;border:1px solid #dfe4ea;border-radius:9px;padding:8px 12px;font-weight:600;
+    color:#44555e;cursor:pointer;}
+  .ffotob input{display:none;}
+  .fmed{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid #e6eaf0;border-radius:12px;
+    padding:10px 11px;margin-bottom:7px;}
+  .fmed .fd{font-weight:700;font-size:12px;color:#15242c;min-width:66px;}
+  .fmed .fi{font-size:11.5px;color:#5f7079;line-height:1.55;}
+  .fmed img{width:52px;height:52px;object-fit:cover;border-radius:8px;margin-left:auto;border:1px solid #e6eaf0;}
+  .fmed .del{margin-left:auto;background:none;border:0;color:#b6c0c6;font-size:19px;line-height:1;cursor:pointer;padding:0 2px;}
   .fischart{background:#fff;border:1px solid #e6eaf0;border-radius:14px;padding:10px 8px 4px;margin-top:10px;}
   .fischartrot{font-size:11px;color:#5f7079;padding:0 4px 6px;}
   .sseg{display:flex;gap:6px;flex-wrap:wrap;}
@@ -399,7 +442,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 32</span>
+<span class="vtag" style="z-index:80">versão 33</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -674,6 +717,13 @@
       <div class="ttl">Toque em um ponto<br>para ver o sistema</div>
     </div>
     <div class="av-legend" id="avLegend"></div>
+    <button class="fbtn" id="fbAbrir" aria-label="Feridas e lesões">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c2.5 3 4.5 5 4.5 8a4.5 4.5 0 0 1-9 0c0-3 2-5 4.5-8z"/></svg>
+      <span id="fbCount"></span></button>
+    <div class="fmarcar hidden" id="fMarcar">
+      Toque na pele, onde está a lesão
+      <button type="button" id="fMarcarSai">cancelar</button>
+    </div>
     <button class="reset" id="resetView" aria-label="Recentralizar">&#8635;</button>
     <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
   </div>
@@ -4580,6 +4630,7 @@ window.addEventListener('error',function(e){
     if(v==='humor'){setTab('humor');if(!weatherNow)fetchWeather(function(w){weatherNow=w;renderMood();});renderMood();}
     if(v==='perfil'){setTab('perfil');renderPerfil();}
     if(v==='avatar'){ensureThree();buildAvatarBody();requestAnimationFrame(resize3D);}
+    else if(modoFerida){try{saiModoFerida();}catch(e){}}
   }
   el('tab').addEventListener('click',function(e){var a=e.target.closest('a');if(a)show(a.dataset.nav);});
   window.addEventListener('popstate',function(e){navByPop=true;var v=(e.state&&e.state.v)||'home';show(v);navByPop=false;});
@@ -4625,7 +4676,8 @@ window.addEventListener('error',function(e){
 
   /* ---- chaves que sobem para a conta (arquivos de exame ficam no aparelho) ---- */
   var SYNC_KEYS=['mybody_profile','mybody_systems_v1','mybody_clinical_v1','mybody_exams_v1',
-                 'mybody_gyneco','mybody_mood_v1','mybody_checkin_last','mybody_onbmed'];
+                 'mybody_gyneco','mybody_mood_v1','mybody_checkin_last','mybody_onbmed',
+                 'mybody_achados_v1','mybody_fotos_v1'];
   function localBundle(){
     var o={};
     SYNC_KEYS.forEach(function(k){try{var v=localStorage.getItem(k);if(v!=null)o[k]=v;}catch(e){}});
@@ -4703,6 +4755,21 @@ window.addEventListener('error',function(e){
       q.forEach(function(doc){
         var d2=doc.data()||{},b={};
         SYNC_KEYS.forEach(function(k){if(d2[k]!=null)b[k]=d2[k];});
+        b.updatedAt=d2.updatedAt||0;
+        /* A NUVEM NAO MANDA SEMPRE. Antes mandava: este laco trocava o
+           pacote local pelo da nuvem sem olhar data nenhuma. Quem gravasse
+           uma consulta e fechasse o app antes do envio — sem rede, documento
+           grande demais para o Firestore, aba fechada rapido — perdia a
+           consulta inteira, em silencio, na proxima entrada. Agora so entra
+           o que for mais novo que o que esta aqui.
+
+           O que isto NAO resolve: editar o mesmo paciente em dois aparelhos.
+           Ai o mais novo continua ganhando por inteiro, e o outro perde o
+           que fez. Juntar pacote com pacote campo a campo e outro problema,
+           e nao se resolve com carimbo de hora. */
+        var local=ptGet(doc.id);
+        var tl=(local&&local.updatedAt)||0, tn=b.updatedAt||0;
+        if(tl&&tl>tn+2000)return;      /* o aparelho esta na frente: fica */
         ptSet(doc.id,b);
       });
       var m=syncMeta();m.uid=AUTH.user.uid;syncMetaSet(m);
@@ -4953,6 +5020,13 @@ window.addEventListener('error',function(e){
     try{SYS=loadSys();}catch(e){}
     try{profile=loadProfile();}catch(e){}
     try{clinical=loadClinical();}catch(e){}
+    /* As lesoes tambem sao do paciente, nao do aparelho. Sem recarregar
+       aqui, o objeto em memoria continuava sendo o do paciente anterior —
+       e como e ele que e gravado de volta, a ferida de um paciente
+       reaparecia no outro, ou sumia. */
+    try{achados=loadAchados();}catch(e){}
+    try{fotos=loadFotos();}catch(e){}
+    try{fMarks=[];fPele=null;UVIDX=null;UVIDX_MESH=null;ferSel=null;modoFerida=false;}catch(e){}
     try{exams=loadExams();}catch(e){}
     try{moods=loadMood();}catch(e){}
     try{homeRoot=null;avRoot=null;}catch(e){}
@@ -4987,6 +5061,9 @@ window.addEventListener('error',function(e){
   function ptPersist(){
     if(!curPt)return;
     var b=workCapture();
+    /* carimbo de hora no pacote local. Sem ele o syncPull nao tinha como
+       saber que o aparelho estava na frente da nuvem, e sobrescrevia. */
+    b.updatedAt=Date.now();
     ptSet(curPt,b);
     var arr=ptsList(),p=null;
     for(var i=0;i<arr.length;i++)if(arr[i].id===curPt)p=arr[i];
@@ -6416,8 +6493,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 32 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 32 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 33 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 33 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6444,6 +6521,8 @@ window.addEventListener('error',function(e){
     host.addEventListener('touchend',function(e){lastDist=0;up(e);});
     host.addEventListener('wheel',function(e){zoom+=e.deltaY*0.0025;zoom=Math.max(4,Math.min(15,zoom));e.preventDefault();},{passive:false});
     el('resetView').onclick=function(){rotX=0;rotY=0.35;zoom=avZoom;};
+    el('fbAbrir').onclick=function(){if(modoFerida)saiModoFerida();abreListaFeridas();};
+    el('fMarcarSai').onclick=saiModoFerida;
     loop(0);
   }
   var avRoot=null,avMixer=null,avClock=new THREE.Clock();
@@ -6453,7 +6532,11 @@ window.addEventListener('error',function(e){
     clearGroup(bodyG);bodyG.scale.set(1,1,1);markers=[];
     addBody(bodyG,P);linearizeMats(bodyG);avZoom=9.6*(P.scale||1);zoom=avZoom;
     loadInto(bodyG,P,false,function(ok,info){
-      if(ok){clearGroup(bodyG);markers=[];bodyG.add(info.root);avRoot=info.root;avMixer=info.mixer;avZoom=9.6;zoom=9.6;try{anatCarregar(function(){try{addOrgans(info.root,(CORPO_NOVO||P.female)?1.0:1.035);}catch(e){}});}catch(e){}linearizeMats(bodyG);}
+      if(ok){clearGroup(bodyG);markers=[];fMarks=[];fPele=null;UVIDX=null;UVIDX_MESH=null;
+        bodyG.add(info.root);avRoot=info.root;avMixer=info.mixer;avZoom=9.6;zoom=9.6;
+        try{anatCarregar(function(){try{addOrgans(info.root,(CORPO_NOVO||P.female)?1.0:1.035);}catch(e){}});}catch(e){}
+        linearizeMats(bodyG);
+        try{desenhaFeridas(info.root);}catch(e){}}
       rotY=0.35;rotX=0;selected=null;legendOn(true);el('sheet').classList.remove('open');
     });
   }
@@ -6463,7 +6546,45 @@ window.addEventListener('error',function(e){
   function move(e){if(!avatarVisible)return;if(e.touches&&e.touches.length===2){pinch(e);return;}if(!dragging)return;var t=pt(e);var dx=t.clientX-lx,dy=t.clientY-ly;lx=t.clientX;ly=t.clientY;rotY+=dx*0.01;rotX+=dy*0.006;rotX=Math.max(-0.5,Math.min(0.5,rotX));moved+=Math.abs(dx)+Math.abs(dy);e.preventDefault();}
   function up(e){if(!avatarVisible)return;if(dragging&&moved<7)pick(e);dragging=false;}
   function pinch(e){var a=e.touches[0],b=e.touches[1];var dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(lastDist){zoom-=(dist-lastDist)*0.025;zoom=Math.max(4,Math.min(15,zoom));}lastDist=dist;e.preventDefault();}
-  function pick(e){var t=(e.changedTouches?e.changedTouches[0]:e),r=renderer.domElement.getBoundingClientRect();var m=new THREE.Vector2(((t.clientX-r.left)/r.width)*2-1,-((t.clientY-r.top)/r.height)*2+1);var rc=new THREE.Raycaster();rc.setFromCamera(m,camera);var cores=markers.map(function(g){return g.userData.core;});var hit=rc.intersectObjects(cores,false);if(hit.length){var g=markers.filter(function(x){return x.userData.core===hit[0].object;})[0];selectSystem(g.userData.id);}else if(selected){closeSheet();}}
+  function pick(e){
+    var t=(e.changedTouches?e.changedTouches[0]:e),r=renderer.domElement.getBoundingClientRect();
+    var m=new THREE.Vector2(((t.clientX-r.left)/r.width)*2-1,-((t.clientY-r.top)/r.height)*2+1);
+    var rc=new THREE.Raycaster();rc.setFromCamera(m,camera);
+
+    /* marcando uma lesao: o alvo e a PELE, e o que interessa e o uv do
+       ponto tocado — e ele que fixa a ferida na anatomia. */
+    if(modoFerida){
+      if(!fPele)fPele=peleDe(avRoot);
+      var hp=fPele?rc.intersectObject(fPele,false):[];
+      /* Sem isto a falha era muda: o dedo batia fora do corpo (ou a malha
+         nao tinha sido achada) e a tela simplesmente nao reagia, sem dizer
+         porque. Quem esta marcando uma ferida precisa saber se errou o
+         alvo ou se o app quebrou — nao sao a mesma coisa.               */
+      window.__mbFer={pele:!!fPele,nome:fPele?fPele.name:null,hits:hp.length,uv:hp.length?!!hp[0].uv:null};
+      if(hp.length&&hp[0].uv){
+        saiModoFerida();
+        criaFerida(hp[0].uv,fPele.worldToLocal(hp[0].point.clone()));
+      }else{
+        var av=el('fMarcar');
+        if(av)av.firstChild.nodeValue=fPele?'Fora do corpo — toque sobre a pele ':
+          'Não consegui ler a malha do corpo. Saia e entre de novo no avatar. ';
+      }
+      return;
+    }
+    /* uma lesao ja marcada tem prioridade sobre o ponto do sistema: ela e
+       menor e esta por cima, entao quem tocou nela quis tocar nela. */
+    var hf=fMarks.length?rc.intersectObjects(fMarks,false):[];
+    if(hf.length&&hf[0].object.userData&&hf[0].object.userData.ferida){
+      abreFerida(hf[0].object.userData.ferida);return;
+    }
+    var cores=markers.map(function(g){return g.userData.core;});
+    var hit=rc.intersectObjects(cores,false);
+    if(hit.length){
+      var g=markers.filter(function(x){return x.userData.core===hit[0].object;})[0];
+      selectSystem(g.userData.id);
+    }else if(selected){closeSheet();}
+    else if(ferSel){fechaFerida();}
+  }
 
   function selectSystem(id){
     if(!SYS[id])return;
@@ -6473,13 +6594,613 @@ window.addEventListener('error',function(e){
     if(sm&&ring){ring.position.copy(sm.position);ring.material.color.copy(SC(HEX[SYS[id].status]));ring.material.opacity=0.92;}
     legendOn(false);renderSheet(id);el('sheet').classList.add('open');
   }
-  function closeSheet(){selected=null;markers.forEach(function(g){g.userData.core.scale.setScalar(1);});if(ring)ring.material.opacity=0;el('sheet').classList.remove('open');legendOn(true);}
+  function closeSheet(){selected=null;ferSel=null;markers.forEach(function(g){g.userData.core.scale.setScalar(1);});if(ring)ring.material.opacity=0;el('sheet').classList.remove('open');legendOn(true);}
   function refreshMarker(id){
     var g=markers.filter(function(x){return x.userData.id===id;})[0];if(!g)return;
     var st=SYS[id].status;
     g.userData.core.material=markerMaterial(st);
     if(g.userData.organ){var nm=organMaterial(id,st);pintaOrgaos(g.userData.organ,nm);g.userData.mat=nm;}
   }
+  /* ================= ACHADOS LOCALIZADOS (v33) =================
+     Uma coisa que esta num LUGAR do corpo e que muda com o TEMPO.
+     A primeira especie e a ferida; a estrutura ja nasce generica para o
+     AVC (territorio cerebral) e o IAM (segmento miocardico) entrarem
+     depois sem migrar dado nenhum.
+
+     ANCORA. A ferida guarda o (u,v) da pele, nao um ponto no espaco nem
+     um indice de triangulo. Medi os 30 corpos antes de decidir: as
+     contagens de vertice e triangulo sao iguais nos 30, mas o exportador
+     reordena os indices — o triangulo N no adulto e no bebe fica a 14 cm
+     de distancia relativa. Ja o conjunto de UV e identico nos 30, e as
+     metades do corpo ocupam ilhas separadas (nao ha um unico UV repetido
+     na pele inteira). Entao um (u,v) e o mesmo ponto anatomico em
+     qualquer idade e qualquer porte — e continua sendo o mesmo ponto
+     quando o paciente engorda entre duas consultas e troca de corpo.   */
+  var AKEY='mybody_achados_v1', FKEY='mybody_fotos_v1';
+  var achados=loadAchados(), fotos=loadFotos();
+  function loadAchados(){
+    try{var r=JSON.parse(localStorage.getItem(AKEY)||'null')||{};
+        return {v:1,itens:Array.isArray(r.itens)?r.itens:[]};}catch(e){return {v:1,itens:[]};}
+  }
+  function saveAchados(){try{localStorage.setItem(AKEY,JSON.stringify(achados));}catch(e){}}
+  function loadFotos(){
+    try{var r=JSON.parse(localStorage.getItem(FKEY)||'null');return (r&&typeof r==='object')?r:{};}
+    catch(e){return {};}
+  }
+  function saveFotos(){try{localStorage.setItem(FKEY,JSON.stringify(fotos));}catch(e){}}
+  function achadoNovoId(){return 'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+  function achadosDe(tipo){
+    return achados.itens.filter(function(a){return !tipo||a.tipo===tipo;});
+  }
+  function achadoPorId(id){
+    for(var i=0;i<achados.itens.length;i++)if(achados.itens[i].id===id)return achados.itens[i];
+    return null;
+  }
+
+  /* ---- orcamento de foto -------------------------------------------
+     Tudo o que sobe para a conta vira UM documento do Firestore, e um
+     documento do Firestore cabe em 1 MiB. A foto divide esse espaco com
+     o resto da ficha, entao ela e reduzida no aparelho antes de subir e
+     o total tem teto. Nao e capricho: passar de 1 MiB faz a gravacao
+     falhar inteira, e perder-se-ia a consulta, nao so a foto.         */
+  var FOTO_LADO=640, FOTO_Q=0.62, FOTO_TETO=700*1024;
+  function fotosBytes(){
+    var t=0;for(var k in fotos){if(fotos.hasOwnProperty(k)&&fotos[k])t+=fotos[k].length;}
+    return Math.round(t*0.75);        /* base64 -> bytes */
+  }
+  function fotoKb(n){return (n/1024)<1024?(Math.round(n/1024)+' KB'):((n/1048576).toFixed(1).replace('.',',')+' MB');}
+  function reduzirFoto(file,cb){
+    try{
+      var fr=new FileReader();
+      fr.onload=function(){
+        var im=new Image();
+        im.onload=function(){
+          try{
+            var k=Math.min(1,FOTO_LADO/Math.max(im.width,im.height));
+            var w=Math.max(1,Math.round(im.width*k)), h=Math.max(1,Math.round(im.height*k));
+            var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+            cv.getContext('2d').drawImage(im,0,0,w,h);
+            cb(cv.toDataURL('image/jpeg',FOTO_Q));
+          }catch(e){cb(null);}
+        };
+        im.onerror=function(){cb(null);};
+        im.src=fr.result;
+      };
+      fr.onerror=function(){cb(null);};
+      fr.readAsDataURL(file);
+    }catch(e){cb(null);}
+  }
+
+  /* ---- UV <-> superficie -------------------------------------------
+     Para desenhar a marca de volta eu preciso do caminho inverso: dado um
+     (u,v), achar o ponto 3D. Percorrer 26.756 triangulos a cada quadro
+     seria caro, entao monto uma grade de baldes no espaco UV uma vez por
+     corpo carregado.                                                    */
+  var UVIDX=null, UVIDX_MESH=null;
+  function peleDe(raiz){
+    var m=null;
+    if(!raiz)return null;
+    raiz.traverse(function(o){
+      if(!m&&o.isMesh&&o.name&&o.name.indexOf('pele')===0&&
+         o.geometry&&o.geometry.attributes&&o.geometry.attributes.uv)m=o;
+    });
+    return m;
+  }
+  function montaUvIndex(mesh){
+    if(UVIDX&&UVIDX_MESH===mesh)return UVIDX;
+    var g=mesh.geometry, uv=g.attributes.uv, ix=g.index;
+    var nTri=ix?(ix.count/3):(g.attributes.position.count/3);
+    var G=72, bal=new Array(G*G);
+    function at(i){return ix?ix.getX(i):i;}
+    for(var t=0;t<nTri;t++){
+      var a=at(t*3),b=at(t*3+1),c=at(t*3+2);
+      var u0=uv.getX(a),v0=uv.getY(a),u1=uv.getX(b),v1=uv.getY(b),u2=uv.getX(c),v2=uv.getY(c);
+      var i0=Math.max(0,Math.min(G-1,Math.floor(Math.min(u0,u1,u2)*G)));
+      var i1=Math.max(0,Math.min(G-1,Math.floor(Math.max(u0,u1,u2)*G)));
+      var j0=Math.max(0,Math.min(G-1,Math.floor(Math.min(v0,v1,v2)*G)));
+      var j1=Math.max(0,Math.min(G-1,Math.floor(Math.max(v0,v1,v2)*G)));
+      for(var i=i0;i<=i1;i++)for(var j=j0;j<=j1;j++){
+        var k=j*G+i;if(!bal[k])bal[k]=[];bal[k].push(t);
+      }
+    }
+    UVIDX={g:G,bal:bal,mesh:mesh};UVIDX_MESH=mesh;
+    return UVIDX;
+  }
+  /* devolve {p:Vector3, n:Vector3} no espaco LOCAL da malha da pele */
+  function pontoDoUv(mesh,u,v){
+    if(!mesh||!mesh.geometry||!mesh.geometry.attributes.uv)return null;
+    var ix3=montaUvIndex(mesh), G=ix3.g;
+    var i=Math.max(0,Math.min(G-1,Math.floor(u*G))), j=Math.max(0,Math.min(G-1,Math.floor(v*G)));
+    var cand=ix3.bal[j*G+i];
+    if(!cand||!cand.length){
+      /* a costura pode deixar o ponto num balde vazio: olha a volta */
+      cand=[];
+      for(var di=-1;di<=1;di++)for(var dj=-1;dj<=1;dj++){
+        var ii=i+di,jj=j+dj;
+        if(ii<0||jj<0||ii>=G||jj>=G)continue;
+        var b=ix3.bal[jj*G+ii];if(b)cand=cand.concat(b);
+      }
+      if(!cand.length)return null;
+    }
+    var g=mesh.geometry, uv=g.attributes.uv, po=g.attributes.position, ix=g.index;
+    function at(k){return ix?ix.getX(k):k;}
+    var melhor=null, melhorD=1e9;
+    for(var q=0;q<cand.length;q++){
+      var t=cand[q], a=at(t*3), b2=at(t*3+1), c=at(t*3+2);
+      var ax=uv.getX(a),ay=uv.getY(a),bx=uv.getX(b2),by=uv.getY(b2),cx=uv.getX(c),cy=uv.getY(c);
+      var den=(by-cy)*(ax-cx)+(cx-bx)*(ay-cy);
+      if(Math.abs(den)<1e-12)continue;
+      var l1=((by-cy)*(u-cx)+(cx-bx)*(v-cy))/den;
+      var l2=((cy-ay)*(u-cx)+(ax-cx)*(v-cy))/den;
+      var l3=1-l1-l2;
+      /* a distancia a dentro do triangulo: 0 quando cai dentro */
+      var fora=Math.max(0,-l1)+Math.max(0,-l2)+Math.max(0,-l3);
+      if(fora<melhorD){melhorD=fora;melhor=[a,b2,c,l1,l2,l3];if(fora===0)break;}
+    }
+    if(!melhor)return null;
+    var A=melhor[0],B=melhor[1],C=melhor[2],w1=melhor[3],w2=melhor[4],w3=melhor[5];
+    if(melhorD>0){ /* fora de todos: prende na borda */
+      w1=Math.max(0,w1);w2=Math.max(0,w2);w3=Math.max(0,w3);
+      var s=w1+w2+w3||1;w1/=s;w2/=s;w3/=s;
+    }
+    var p=new THREE.Vector3(
+      po.getX(A)*w1+po.getX(B)*w2+po.getX(C)*w3,
+      po.getY(A)*w1+po.getY(B)*w2+po.getY(C)*w3,
+      po.getZ(A)*w1+po.getZ(B)*w2+po.getZ(C)*w3);
+    var n=null, na=g.attributes.normal;
+    if(na){
+      n=new THREE.Vector3(
+        na.getX(A)*w1+na.getX(B)*w2+na.getX(C)*w3,
+        na.getY(A)*w1+na.getY(B)*w2+na.getY(C)*w3,
+        na.getZ(A)*w1+na.getZ(B)*w2+na.getZ(C)*w3).normalize();
+    }
+    return {p:p,n:n||new THREE.Vector3(0,0,1)};
+  }
+
+  /* ---- nome da regiao ----------------------------------------------
+     Sugestao, nao verdade: o nome sai de uma regra geometrica e o campo
+     fica editavel. O ponto e exato; a palavra e um palpite.
+     LADO: no corpo do avatar, +x e a ESQUERDA DO PACIENTE (mesma
+     convencao do atlas). Quem olha a tela ve essa metade a sua direita —
+     e por isso que a etiqueta tem de vir da coordenada, nunca da tela. */
+  function nomeDaRegiao(p){
+    var x=p.x, y=p.y, z=p.z;
+    var lado = x>0.022 ? 'esquerd' : (x<-0.022 ? 'direit' : null);
+    function L(m){return lado?(' '+lado+(m||'o')):'';}
+    var frente = z>=0;
+    var face = frente?'face anterior':'face posterior';
+    /* braco: fora da largura do tronco, do ombro para baixo */
+    if(Math.abs(x)>0.215&&y>-0.20){
+      if(Math.abs(x)>0.63)   return 'mão'+L('a');
+      if(Math.abs(x)>0.54)   return 'punho'+L('o');
+      if(Math.abs(x)>0.40)   return 'antebraço'+L('o')+', '+face;
+      if(Math.abs(x)>0.345)  return 'cotovelo'+L('o');
+      if(Math.abs(x)>0.245)  return 'braço'+L('o')+', '+face;
+      return 'ombro'+L('o');
+    }
+    if(y>0.72)  return 'couro cabeludo';
+    if(y>0.635) return frente?('face'+(lado?(', lado '+lado+'o'):'')):'região occipital';
+    if(y>0.545) return frente?'região cervical anterior':'nuca';
+    if(y>0.46)  return (frente?'região supraclavicular':'dorso alto')+L('o');
+    if(y>0.26)  return frente?('tórax'+L('o')):('dorso'+L('o'));
+    if(y>0.08)  return frente?('abdome'+(lado?(', flanco '+lado+'o'):'')):('região lombar'+L('o'));
+    if(y>-0.04) return frente?('região inguinal'+L('a')):'região sacral';
+    if(y>-0.10) return 'região glútea'+L('a');
+    if(y>-0.42) return 'coxa'+L('a')+', '+face;
+    if(y>-0.50) return frente?('joelho'+L('o')):('fossa poplítea'+L('a'));
+    if(y>-0.76) return 'perna'+L('a')+', '+face;
+    if(y>-0.83) return frente?('tornozelo'+L('o')):('calcâneo'+L('o'));
+    return frente?('dorso do pé'+L('o')):('planta do pé'+L('o'));
+  }
+
+
+  /* ---- escalas da ferida ---------------------------------------------
+     PUSH Tool 3.0 (NPUAP/NPIAP). Conferido na ficha oficial: area em cm2
+     pela maior extensao vezes a maior largura, exsudato 0 a 3, tipo de
+     tecido 0 a 4, total 0 a 17, zero = cicatrizada; caindo melhora.
+
+     Duas honestidades que ficam na tela, nao so aqui:
+
+     1. O PUSH foi desenvolvido e validado em ULCERA POR PRESSAO. E usado
+        em ferida venosa e diabetica, com menos evidencia. O app calcula
+        para qualquer etiologia, mas diz de onde vem.
+
+     2. Comprimento x largura superestima ferida irregular: mede o
+        retangulo que a contem, nao a ferida. E assim que o PUSH manda
+        medir, entao e assim que eu meco — mas isso fica escrito.
+
+     A tabela oficial tem um vao entre 0,6 e 0,7 cm2 (a faixa 2 termina em
+     0,6 e a 3 comeca em 0,7). Area de 0,65 cai na 3 aqui.               */
+  function pushArea(a){
+    if(!(a>0))return 0;
+    if(a<0.3)return 1;  if(a<=0.6)return 2;  if(a<=1.0)return 3;
+    if(a<=2.0)return 4; if(a<=3.0)return 5;  if(a<=4.0)return 6;
+    if(a<=8.0)return 7; if(a<=12.0)return 8; if(a<=24.0)return 9;
+    return 10;
+  }
+  var FER_TECIDO=['Fechada (epitelizada)','Epitelial','Granulação','Esfacelo','Necrose'];
+  var FER_EXSUD=['Nenhum','Leve','Moderado','Grande'];
+  var FER_ETIO=[['pressao','Pressão'],['venosa','Venosa'],['arterial','Arterial'],
+                ['diabetica','Pé diabético'],['cirurgica','Cirúrgica'],
+                ['trauma','Trauma'],['outra','Outra']];
+  function etioNome(k){
+    for(var i=0;i<FER_ETIO.length;i++)if(FER_ETIO[i][0]===k)return FER_ETIO[i][1];
+    return 'Não definida';
+  }
+  function ferArea(r){
+    if(r==null||r.comp==null||r.larg==null)return null;
+    return r.comp*r.larg;
+  }
+  function ferPush(r){
+    var a=ferArea(r); if(a==null)return null;
+    if(r.exsudato==null||r.tecido==null)return null;
+    return pushArea(a)+r.exsudato+r.tecido;
+  }
+  function ferRegs(a){
+    return (a.registros||[]).slice().sort(function(x,y){return (x.ts||0)-(y.ts||0);});
+  }
+  function ferUltimo(a){var r=ferRegs(a);return r.length?r[r.length-1]:null;}
+  function ferCor(a){
+    if(a.fechado)return '#2e9e6b';
+    var u=ferUltimo(a); var p=u?ferPush(u):null;
+    if(p==null)return '#b08a2e';
+    if(u&&u.infec)return '#c2302b';
+    return p>=12?'#c2302b':(p>=7?'#d98324':'#b08a2e');
+  }
+  function ferDias(a){
+    try{var i=new Date(a.inicio+'T12:00:00').getTime();
+        return Math.max(0,Math.round((Date.now()-i)/86400000));}catch(e){return null;}
+  }
+  /* reducao percentual de area entre o primeiro registro e um outro */
+  function ferReducao(a,ate){
+    var r=ferRegs(a); if(r.length<2)return null;
+    var a0=ferArea(r[0]); if(!(a0>0))return null;
+    var alvo=ate||r[r.length-1]; var a1=ferArea(alvo);
+    if(a1==null)return null;
+    return {pct:(a0-a1)/a0*100, dias:Math.round(((alvo.ts||0)-(r[0].ts||0))/86400000), a0:a0, a1:a1};
+  }
+  /* O registro mais proximo de 4 semanas, para o preditor de Sheehan.
+     So vale em pe diabetico: e a populacao do estudo. */
+  function ferQuatroSemanas(a){
+    var r=ferRegs(a); if(r.length<2)return null;
+    var t0=r[0].ts||0, alvo=null, melhor=1e18;
+    for(var i=1;i<r.length;i++){
+      var dd=Math.abs(((r[i].ts||0)-t0)/86400000-28);
+      if(dd<melhor){melhor=dd;alvo=r[i];}
+    }
+    if(!alvo||melhor>10)return null;      /* so entre 18 e 38 dias */
+    var R=ferReducao(a,alvo); if(!R)return null;
+    R.alvo=alvo; return R;
+  }
+
+  /* ---- marcas no corpo ------------------------------------------------ */
+  var fMarks=[], fPele=null, modoFerida=false, ferSel=null;
+  function alturaReal(){
+    var h=profile&&parseFloat(profile.altura);
+    return (h&&h>30&&h<260)?h:170;
+  }
+  function raioLocal(cm){
+    /* a malha tem 1,80 unidades de altura seja qual for a altura real do
+       paciente, entao centimetro vira unidade pela regra de tres */
+    var u=(cm/100)/(alturaReal()/100)*1.8;
+    return Math.max(0.011,Math.min(0.075,u/2));
+  }
+  function limpaMarcasFerida(){
+    fMarks.forEach(function(m){
+      try{ if(m.parent)m.parent.remove(m);
+           if(m.geometry)m.geometry.dispose();
+           if(m.material)m.material.dispose(); }catch(e){}
+    });
+    fMarks=[];
+  }
+  function desenhaFeridas(raiz){
+    limpaMarcasFerida();
+    fPele=peleDe(raiz);
+    if(!fPele)return;
+    achadosDe('ferida').forEach(function(a){
+      if(!a.uv)return;
+      var q=pontoDoUv(fPele,a.uv[0],a.uv[1]);
+      if(!q)return;
+      var u=ferUltimo(a);
+      var larg=(u&&u.larg!=null&&u.comp!=null)?Math.max(u.comp,u.larg):1.6;
+      var r=raioLocal(larg);
+      var cor=SC(parseInt(ferCor(a).slice(1),16));
+      var mat=new THREE.MeshStandardMaterial({color:cor,roughness:0.42,metalness:0,
+        emissive:cor.clone().multiplyScalar(0.55),emissiveIntensity:0.9,
+        transparent:true,opacity:0.95,depthTest:false});
+      mat.userData={__lin:true};
+      var me=new THREE.Mesh(new THREE.SphereGeometry(r,18,14),mat);
+      me.position.copy(q.p).addScaledVector(q.n,r*0.45);
+      me.renderOrder=8;me.frustumCulled=false;
+      me.userData={ferida:a.id,noTint:true};
+      fPele.add(me);fMarks.push(me);
+    });
+    atualizaBotaoFerida();
+  }
+  function atualizaBotaoFerida(){
+    var b=el('fbCount');if(!b)return;
+    var n=achadosDe('ferida').filter(function(a){return !a.fechado;}).length;
+    b.textContent=n?String(n):'';
+    b.classList.toggle('on',!!n);
+  }
+
+  /* ---- criar / abrir --------------------------------------------------- */
+  function criaFerida(uv,pLocal){
+    var hoje=new Date();
+    var iso=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+    var a={id:achadoNovoId(),tipo:'ferida',titulo:'',etiologia:'',
+           uv:[uv.x,uv.y],regiao:nomeDaRegiao(pLocal),
+           inicio:iso,fechado:null,registros:[]};
+    a.titulo=a.regiao.charAt(0).toUpperCase()+a.regiao.slice(1);
+    achados.itens.push(a);saveAchados();ptPersist();
+    desenhaFeridas(avRoot);
+    abreFerida(a.id);
+    return a;
+  }
+  function abreFerida(id){
+    ferSel=id;selected=null;
+    markers.forEach(function(g){g.userData.core.scale.setScalar(1);});
+    if(ring)ring.material.opacity=0;
+    legendOn(false);renderFerida(id);el('sheet').classList.add('open');
+  }
+  function abreListaFeridas(){
+    ferSel=null;selected=null;legendOn(false);
+    renderListaFeridas();el('sheet').classList.add('open');
+  }
+  function fechaFerida(){
+    ferSel=null;el('sheet').classList.remove('open');legendOn(true);
+  }
+
+
+  /* ---- a ficha --------------------------------------------------------- */
+  function dataBR(iso){
+    if(!iso)return '—';
+    var p=String(iso).split('-');
+    return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):iso;
+  }
+  function dataCurta(ts){
+    var dt=new Date(ts||Date.now());
+    return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');
+  }
+  function renderListaFeridas(){
+    var lst=achadosDe('ferida');
+    lst.sort(function(x,y){return (x.fechado?1:0)-(y.fechado?1:0)||((y.registros[0]||{}).ts||0)-((x.registros[0]||{}).ts||0);});
+    var corpo=lst.length?('<div class="flista">'+lst.map(function(a){
+      var u=ferUltimo(a), ar=u?ferArea(u):null, p=u?ferPush(u):null;
+      return '<button class="fcard" data-f="'+a.id+'">'+
+        '<span class="fpt" style="background:'+ferCor(a)+'"></span>'+
+        '<span><span class="fnm">'+esc(a.titulo||a.regiao)+'</span>'+
+        '<span class="fsub">'+esc(etioNome(a.etiologia))+' · desde '+dataBR(a.inicio)+
+        (a.fechado?(' · <b style="color:#2e9e6b">cicatrizada</b>'):'')+'</span></span>'+
+        '<span class="fval">'+(ar!=null?('<b>'+numBR(ar,1)+' cm²</b>'+(p!=null?('PUSH '+p):'')):'sem medição')+'</span>'+
+        '</button>';
+    }).join('')+'</div>'):'<p class="note">Nenhuma lesão marcada ainda.</p>';
+
+    el('sheetBody').innerHTML=
+      '<div class="shead"><div><div class="fr">Feridas e lesões</div>'+
+      '<div class="tech">Marcadas no corpo e acompanhadas no tempo</div></div>'+
+      '<button class="sclose" id="sx" aria-label="Fechar">&times;</button></div>'+
+      corpo+
+      '<div class="seclab">Nova lesão</div>'+
+      '<p class="note">Toque em <b>Marcar no corpo</b> e depois no ponto da pele onde está a lesão. '+
+      'O ponto fica preso à anatomia: ele continua no mesmo lugar se o paciente mudar de peso ou de faixa etária.</p>'+
+      '<div class="sform"><button class="sbtn" id="fNovo" style="width:100%">Marcar no corpo</button></div>';
+    el('sx').onclick=fechaFerida;
+    el('fNovo').onclick=function(){fechaFerida();entraModoFerida();};
+    [].forEach.call(el('sheetBody').querySelectorAll('.fcard'),function(b){
+      b.onclick=function(){abreFerida(b.dataset.f);};});
+  }
+
+  function renderFerida(id){
+    var a=achadoPorId(id); if(!a){abreListaFeridas();return;}
+    var regs=ferRegs(a), u=ferUltimo(a);
+    var ar=u?ferArea(u):null, p=u?ferPush(u):null;
+    var R=ferReducao(a), S=(a.etiologia==='diabetica')?ferQuatroSemanas(a):null;
+    var dias=ferDias(a);
+
+    var cab='<div class="shead"><div style="display:flex;align-items:center;gap:10px">'+
+      '<span class="fpt" style="width:13px;height:13px;border-radius:50%;background:'+ferCor(a)+'"></span>'+
+      '<div><div class="fr">'+esc(a.titulo||a.regiao)+'</div>'+
+      '<div class="tech">'+esc(a.regiao)+(dias!=null?(' · '+dias+' dia'+(dias===1?'':'s')):'')+'</div></div></div>'+
+      '<button class="sclose" id="sx" aria-label="Fechar">&times;</button></div>';
+
+    var resumo='';
+    if(u){
+      resumo+='<div class="fisbig"><span class="v">'+numBR(ar,1)+'</span><span class="u">cm² · '+
+        dataCurta(u.ts)+'</span></div><div class="fistags">';
+      if(p!=null)resumo+='<span class="fistag"><b>PUSH '+p+'</b><span>de 17; zero é cicatrizada</span></span>';
+      resumo+='<span class="fistag"><b>'+esc(FER_TECIDO[u.tecido]||'—')+'</b><span>leito</span></span>';
+      resumo+='<span class="fistag"><b>Exsudato '+esc((FER_EXSUD[u.exsudato]||'—').toLowerCase())+'</b></span>';
+      if(u.infec)resumo+='<span class="fistag" style="border-color:#e8b4b1"><b style="color:#c2302b">Sinais de infecção</b></span>';
+      resumo+='</div>';
+      if(R&&regs.length>1){
+        var sinal=R.pct>=0?'redução':'aumento';
+        resumo+='<div class="fisrisk">Área com '+sinal+' de '+numBR(Math.abs(R.pct),0)+'% em '+
+          R.dias+' dias ('+numBR(R.a0,1)+' → '+numBR(R.a1,1)+' cm²).</div>';
+      }
+      if(S){
+        var bom=S.pct>=53;
+        resumo+='<div class="fisrisk">Em 4 semanas a área '+(S.pct>=0?'reduziu':'aumentou')+' '+
+          numBR(Math.abs(S.pct),0)+'%. '+(bom?'Acima':'Abaixo')+' dos 53% que, em úlcera de pé diabético, '+
+          'separaram quem cicatrizou em 12 semanas (58%) de quem não cicatrizou (9%).</div>';
+      }
+    }else{
+      resumo+='<p class="note">Sem medição ainda. Lance a primeira abaixo.</p>';
+    }
+
+    /* grafico de area */
+    var serie=regs.filter(function(r){return ferArea(r)!=null;})
+                  .map(function(r){return {v:Math.round(ferArea(r)*10)/10,date:dataCurta(r.ts)};});
+    var graf=serie.length>1?('<div class="fischart"><div class="fischartrot">Área da lesão ao longo do tempo (cm²)</div>'+
+      chartSvg(serie)+'</div>'):'';
+
+    /* lista de medicoes, mais recente primeiro */
+    var linhas=regs.slice().reverse().map(function(r){
+      var aa=ferArea(r), pp=ferPush(r);
+      var det=[];
+      if(aa!=null)det.push(numBR(r.comp,1)+' × '+numBR(r.larg,1)+' cm = '+numBR(aa,1)+' cm²');
+      if(r.prof!=null)det.push('prof. '+numBR(r.prof,1)+' cm');
+      if(pp!=null)det.push('PUSH '+pp);
+      if(r.tecido!=null)det.push((FER_TECIDO[r.tecido]||'').toLowerCase());
+      if(r.exsudato!=null)det.push('exsudato '+(FER_EXSUD[r.exsudato]||'').toLowerCase());
+      if(r.dor!=null)det.push('dor '+numBR(r.dor,0)+'/10');
+      if(r.infec)det.push('sinais de infecção');
+      var ft=(r.foto&&fotos[r.foto])?('<img src="'+fotos[r.foto]+'" alt="">'):'';
+      return '<div class="fmed"><div class="fd">'+dataCurta(r.ts)+'</div>'+
+        '<div class="fi">'+esc(det.join(' · '))+(r.nota?('<br>'+esc(r.nota)):'')+'</div>'+
+        ft+'<button class="del" data-r="'+(r.ts||0)+'" aria-label="Apagar">&times;</button></div>';
+    }).join('');
+
+    /* formulario */
+    function seg(nome,lista,col){
+      return '<div class="fseg'+(col?' col':'')+'" id="fe_'+nome+'" data-v="">'+
+        lista.map(function(t,i){return '<button type="button" data-v="'+i+'">'+esc(t)+'</button>';}).join('')+'</div>';
+    }
+    var form=
+      '<div class="seclab">Nova avaliação</div>'+
+      '<div class="fgrid">'+
+      '<div class="fisop"><label>Comprimento (cm)</label><input id="fe_comp" inputmode="decimal" placeholder="ex.: 4,2"></div>'+
+      '<div class="fisop"><label>Largura (cm)</label><input id="fe_larg" inputmode="decimal" placeholder="ex.: 2,5"></div>'+
+      '<div class="fisop"><label>Profundidade (cm)</label><input id="fe_prof" inputmode="decimal" placeholder="opcional"></div>'+
+      '<div class="fisop"><label>Dor (0 a 10)</label><input id="fe_dor" inputmode="numeric" placeholder="opcional"></div>'+
+      '</div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Tipo de tecido no leito</label>'+seg('tecido',FER_TECIDO,true)+'</div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Quantidade de exsudato</label>'+seg('exsudato',FER_EXSUD)+'</div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Sinais de infecção</label>'+
+        '<div class="fseg" id="fe_infec" data-v="0"><button type="button" data-v="0" class="on">Não</button>'+
+        '<button type="button" data-v="1">Sim</button></div></div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Observação</label>'+
+        '<input id="fe_nota" placeholder="opcional"></div>'+
+      '<div class="ffotob"><label>Foto<input type="file" accept="image/*" id="fe_foto"></label>'+
+        '<span id="fe_fotoinfo">'+(fotosBytes()?('fotos guardadas: '+fotoKb(fotosBytes())+' de '+fotoKb(FOTO_TETO)):'nenhuma foto guardada')+'</span></div>'+
+      '<div class="ffoto hidden" id="fe_fotoprev"></div>'+
+      '<div id="feErr" class="fiserr"></div>'+
+      '<div class="sform"><button class="sbtn" id="feGo" style="width:100%">Salvar avaliação</button></div>';
+
+    var notas=
+      '<div class="fisnota">O PUSH foi desenvolvido e validado em <b>úlcera por pressão</b>. É usado em ferida '+
+      'venosa e de pé diabético, com menos evidência. Aqui ele é calculado para qualquer etiologia — leia com isso em mente.</div>'+
+      '<div class="fisnota">A área é comprimento × largura, como o PUSH manda medir. Isso mede o retângulo que contém '+
+      'a ferida, então <b>superestima</b> ferida irregular. Serve para comparar a mesma ferida ao longo do tempo, não para medir a ferida.</div>'+
+      '<div class="fisnota">A região foi sugerida pela posição do ponto e pode ser corrigida. O <b>ponto</b> é exato e está preso à anatomia; '+
+      'o <b>nome</b> é um palpite, calibrado em proporção adulta — em bebê e criança erra com mais facilidade.</div>'+
+      '<div class="fisfonte">PUSH Tool 3.0 — NPUAP. Preditor de 4 semanas: Sheehan et al., Diabetes Care 2003;26:1879 (203 úlceras de pé diabético não infectadas e não isquêmicas).</div>';
+
+    var rodape=
+      '<div class="seclab">A lesão</div>'+
+      '<div class="fisop"><label>Nome</label><input id="fa_tit" value="'+esc(a.titulo||'')+'"></div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Região</label><input id="fa_reg" value="'+esc(a.regiao||'')+'"></div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Etiologia</label>'+
+        '<div class="fseg" id="fa_etio" data-v="'+esc(a.etiologia||'')+'">'+
+        FER_ETIO.map(function(o){return '<button type="button" data-v="'+o[0]+'"'+(a.etiologia===o[0]?' class="on"':'')+'>'+esc(o[1])+'</button>';}).join('')+
+        '</div></div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Início</label><input id="fa_ini" type="date" value="'+esc(a.inicio||'')+'"></div>'+
+      '<div class="sform" style="gap:8px"><button class="sbtn" id="faFech" style="flex:1">'+
+        (a.fechado?'Reabrir':'Marcar como cicatrizada')+'</button>'+
+        '<button class="sbtn" id="faDel" style="flex:0 0 auto;background:#fff;color:#c2302b;border:1px solid #e8b4b1">Apagar</button></div>';
+
+    el('sheetBody').innerHTML=cab+resumo+graf+
+      (linhas?('<div class="seclab">Avaliações</div>'+linhas):'')+
+      form+notas+rodape+
+      '<div class="sform"><button class="sbtn" id="faVoltar" style="width:100%;background:#fff;color:#44555e;border:1px solid #dfe4ea">Todas as lesões</button></div>';
+
+    /* ---- ligacoes ---- */
+    el('sx').onclick=fechaFerida;
+    el('faVoltar').onclick=abreListaFeridas;
+    function segLiga(gid){
+      var g=el(gid);if(!g)return;
+      [].forEach.call(g.querySelectorAll('button'),function(b){
+        b.onclick=function(){
+          [].forEach.call(g.querySelectorAll('button'),function(x){x.classList.remove('on');});
+          b.classList.add('on');g.setAttribute('data-v',b.dataset.v);};});
+    }
+    ['fe_tecido','fe_exsudato','fe_infec','fa_etio'].forEach(segLiga);
+
+    var fotoPend=null;
+    el('fe_foto').onchange=function(){
+      var f=this.files&&this.files[0];if(!f)return;
+      reduzirFoto(f,function(durl){
+        if(!durl){el('feErr').textContent='Não consegui ler essa imagem.';return;}
+        var tam=Math.round(durl.length*0.75);
+        if(fotosBytes()+tam>FOTO_TETO){
+          el('feErr').textContent='As fotos deste paciente já ocupam '+fotoKb(fotosBytes())+
+            ' do limite de '+fotoKb(FOTO_TETO)+'. Apague uma avaliação antiga com foto para abrir espaço.';
+          return;
+        }
+        fotoPend=durl;el('feErr').textContent='';
+        var pv=el('fe_fotoprev');pv.innerHTML='<img src="'+durl+'" alt="">';pv.classList.remove('hidden');
+        el('fe_fotoinfo').textContent='esta foto: '+fotoKb(tam)+' · guardadas: '+fotoKb(fotosBytes());
+      });
+    };
+
+    function salvaCabecalho(){
+      a.titulo=(el('fa_tit').value||'').trim();
+      a.regiao=(el('fa_reg').value||'').trim()||a.regiao;
+      a.etiologia=el('fa_etio').getAttribute('data-v')||'';
+      a.inicio=el('fa_ini').value||a.inicio;
+      saveAchados();ptPersist();
+    }
+    ['fa_tit','fa_reg','fa_ini'].forEach(function(k){el(k).onchange=function(){salvaCabecalho();};});
+    [].forEach.call(el('fa_etio').querySelectorAll('button'),function(b){
+      var ant=b.onclick;b.onclick=function(e){ant.call(this,e);salvaCabecalho();renderFerida(id);};});
+
+    el('faFech').onclick=function(){
+      salvaCabecalho();
+      if(a.fechado){a.fechado=null;}
+      else{var dt=new Date();a.fechado=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+      saveAchados();ptPersist();desenhaFeridas(avRoot);renderFerida(id);
+    };
+    el('faDel').onclick=function(){
+      if(!window.confirm('Apagar esta lesão e todas as avaliações dela?'))return;
+      (a.registros||[]).forEach(function(r){if(r.foto)delete fotos[r.foto];});
+      achados.itens=achados.itens.filter(function(x){return x.id!==a.id;});
+      saveAchados();saveFotos();ptPersist();desenhaFeridas(avRoot);abreListaFeridas();
+    };
+    [].forEach.call(el('sheetBody').querySelectorAll('.fmed .del'),function(b){
+      b.onclick=function(){
+        var ts=parseInt(b.dataset.r,10);
+        var alvo=null;
+        a.registros=(a.registros||[]).filter(function(r){
+          if((r.ts||0)===ts){alvo=r;return false;} return true;});
+        if(alvo&&alvo.foto){delete fotos[alvo.foto];saveFotos();}
+        saveAchados();ptPersist();desenhaFeridas(avRoot);renderFerida(id);
+      };});
+
+    el('feGo').onclick=function(){
+      function num(k){
+        var t=(el(k).value||'').trim().replace(',','.');
+        if(!t)return null;
+        var v=parseFloat(t);return isNaN(v)?null:v;
+      }
+      var comp=num('fe_comp'), larg=num('fe_larg'), prof=num('fe_prof'), dor=num('fe_dor');
+      var tec=el('fe_tecido').getAttribute('data-v'), exs=el('fe_exsudato').getAttribute('data-v');
+      var er=el('feErr');er.textContent='';
+      if(comp==null||larg==null){er.textContent='Informe o comprimento e a largura.';return;}
+      if(comp<=0||larg<=0||comp>60||larg>60){er.textContent='Comprimento e largura devem estar entre 0 e 60 cm.';return;}
+      if(tec===''){er.textContent='Escolha o tipo de tecido no leito.';return;}
+      if(exs===''){er.textContent='Escolha a quantidade de exsudato.';return;}
+      if(dor!=null&&(dor<0||dor>10)){er.textContent='A dor vai de 0 a 10.';return;}
+      salvaCabecalho();
+      var reg={ts:Date.now(),comp:comp,larg:larg,prof:prof,dor:dor,
+               tecido:parseInt(tec,10),exsudato:parseInt(exs,10),
+               infec:el('fe_infec').getAttribute('data-v')==='1',
+               nota:(el('fe_nota').value||'').trim(),foto:null};
+      if(fotoPend){reg.foto='f'+reg.ts;fotos[reg.foto]=fotoPend;saveFotos();}
+      a.registros=a.registros||[];a.registros.push(reg);
+      saveAchados();ptPersist();desenhaFeridas(avRoot);renderFerida(id);
+    };
+  }
+  function entraModoFerida(){
+    modoFerida=true;
+    el('fMarcar').classList.remove('hidden');
+    legendOn(false);
+  }
+  function saiModoFerida(){
+    modoFerida=false;
+    el('fMarcar').classList.add('hidden');
+    legendOn(true);
+  }
+
   /* ================= MOTOR FISIOLOGICO (v21) =================
      Cada sistema do corpo pode ter um modulo: campos de entrada com unidade e
      faixa, uma funcao que calcula a partir deles, e o estado que vai colorir o
