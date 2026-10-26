@@ -195,6 +195,12 @@
   .fisman{margin-top:8px;font-size:11.5px;color:#5f7079;}
   .fisman button{background:none;border:none;padding:0;font-family:inherit;font-size:11.5px;
                  color:var(--pink-deep);text-decoration:underline;cursor:pointer;}
+  .lcbar{background:#fff8ec;border:1px solid #f0dfbe;border-radius:14px;padding:13px 15px;margin-top:22px;}
+  .lcbar .lct{font-weight:700;font-size:13px;color:#7a5a12;}
+  .lcbar p{font-size:12px;color:#6c6350;line-height:1.55;margin:5px 0 0;}
+  .lcb{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+  .lcb button{background:#fff;border:1px solid #e4d9bf;border-radius:9px;padding:7px 11px;
+    font:600 12px system-ui,sans-serif;color:#7a5a12;cursor:pointer;}
   .fbtn{position:absolute;right:14px;top:92px;width:42px;height:42px;border-radius:50%;border:1px solid #e3e7ed;
     background:#fff;color:#c2302b;display:flex;align-items:center;justify-content:center;
     box-shadow:0 3px 12px rgba(16,31,42,.13);cursor:pointer;z-index:6;}
@@ -442,7 +448,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 33</span>
+<span class="vtag" style="z-index:80">versão 34</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -521,6 +527,18 @@
       </button>
     </div>
 
+    <div class="lcbar hidden" id="lcBar">
+      <div class="lct">Este aparelho, sem conta</div>
+      <p>As fichas ficam guardadas só neste navegador. Limpar os dados do site, trocar de celular
+         ou abrir numa janela anônima e elas somem. Faça backup de vez em quando.</p>
+      <div class="lcb">
+        <button type="button" id="lcExp">Backup de tudo</button>
+        <button type="button" id="lcImp">Restaurar</button>
+        <button type="button" id="lcConta">Usar uma conta</button>
+      </div>
+      <input type="file" accept="application/json,.json" id="lcFile" style="display:none">
+    </div>
+
     <div class="head" style="margin-top:26px">
       <h1>Meus pacientes</h1>
       <p id="ptCount">Nenhum paciente ainda.</p>
@@ -570,6 +588,7 @@
       <button type="button" class="lg-alt" id="lgSwap">Não tenho conta ainda — criar conta</button>
       <button type="button" class="lg-alt lg-small" id="lgForgot">Esqueci minha senha</button>
       <button type="button" class="lg-alt lg-small" id="lgDiagOpen">Por que não estou conseguindo entrar?</button>
+      <button type="button" class="lg-alt lg-small" id="lgLocal">Usar só neste aparelho, sem conta</button>
     </div>
 
     <div id="lgDiag" class="lg-privacy hidden"></div>
@@ -597,6 +616,7 @@
       <p id="lgOffTxt">Não consegui falar com o servidor. Verifique sua internet e tente de novo.</p>
       <button type="button" class="ghost" id="lgRetry">Tentar de novo</button>
       <button type="button" class="lg-alt lg-small" id="lgDiagOpen2">Ver o que está faltando</button>
+      <button type="button" class="lg-alt lg-small" id="lgLocal2">Usar só neste aparelho, sem conta</button>
     </div>
   </div>
 </div>
@@ -5001,6 +5021,11 @@ window.addEventListener('error',function(e){
     }
   }
   function doLogout(){
+    if(localOnly()){
+      if(!window.confirm('Sair do modo sem conta?\n\nOs pacientes continuam guardados neste aparelho.'))return;
+      try{ptPersist();}catch(e){}
+      localSet(false);location.reload();return;
+    }
     try{syncPush();}catch(e){}
     var go=function(){
       try{
@@ -5182,8 +5207,95 @@ window.addEventListener('error',function(e){
     curPt=null;try{localStorage.removeItem(CURK);}catch(e){}
     workClear();reloadState();
     ptBind();show('pts');
+    try{lcBind();}catch(e){}
   }
+  /* ---- modo local ----------------------------------------------------
+     O dado sempre viveu no localStorage; a conta so o levava de um
+     aparelho para outro. Sem conta, o app continua inteiro — o que se
+     perde e a copia na nuvem, e isso fica dito na tela, nao escondido. */
+  var LKEY='mybody_local_v1';
+  function localOnly(){try{return localStorage.getItem(LKEY)==='1';}catch(e){return false;}}
+  function localSet(v){
+    try{ if(v)localStorage.setItem(LKEY,'1'); else localStorage.removeItem(LKEY); }catch(e){}
+  }
+  function chavesMybody(){
+    var ks=[];
+    try{ for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.indexOf('mybody_')===0&&k!==LKEY&&k!=='mybody_sync_v1')ks.push(k);
+    } }catch(e){}
+    return ks;
+  }
+  /* backup de TODOS os pacientes. O que ja existia exportava so o
+     paciente aberto — suficiente quando a nuvem tinha o resto, inutil
+     quando este aparelho e o unico lugar onde o dado existe. */
+  function backupTudo(){
+    var out={_app:'MYBODY',_v:3,_tipo:'completo',_date:new Date().toISOString(),dados:{}};
+    try{ if(curPt)ptPersist(); }catch(e){}
+    chavesMybody().forEach(function(k){try{out.dados[k]=localStorage.getItem(k);}catch(e){}});
+    var n=0;try{n=(JSON.parse(out.dados.mybody_pts_v1||'[]')||[]).length;}catch(e){}
+    out._pacientes=n;
+    var blob=new Blob([JSON.stringify(out)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    var dt=new Date();
+    a.download='mybody-tudo-'+dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+
+               '-'+String(dt.getDate()).padStart(2,'0')+'.json';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){try{URL.revokeObjectURL(a.href);a.remove();}catch(e){}},900);
+    return n;
+  }
+  function restauraTudo(file,cb){
+    var fr=new FileReader();
+    fr.onload=function(){
+      var o=null;try{o=JSON.parse(fr.result);}catch(e){}
+      if(!o||o._app!=='MYBODY'||!o.dados){cb('Este arquivo não parece ser um backup do MYBODY.');return;}
+      var n=o._pacientes||0;
+      if(!window.confirm('Restaurar '+(n?(n+' paciente'+(n===1?'':'s')):'o backup')+
+         ' de '+String(o._date||'').slice(0,10)+'?\n\nIsto substitui o que está neste aparelho agora.'))return;
+      try{
+        chavesMybody().forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
+        for(var k in o.dados){if(o.dados.hasOwnProperty(k)&&o.dados[k]!=null)localStorage.setItem(k,o.dados[k]);}
+      }catch(e){cb('Não consegui gravar: o armazenamento deste navegador encheu ou está bloqueado.');return;}
+      cb(null);
+    };
+    fr.onerror=function(){cb('Não consegui ler o arquivo.');};
+    fr.readAsText(file);
+  }
+  function lcBind(){
+    var b=el('lcBar');if(!b)return;
+    b.classList.toggle('hidden',!localOnly());
+    if(!localOnly())return;
+    el('lcExp').onclick=function(){
+      var n=backupTudo();
+      el('lcExp').textContent=n?('Backup de '+n+' paciente'+(n===1?'':'s')+' ✓'):'Backup salvo ✓';
+      setTimeout(function(){el('lcExp').textContent='Backup de tudo';},2600);
+    };
+    el('lcImp').onclick=function(){el('lcFile').click();};
+    el('lcFile').onchange=function(){
+      var f=this.files&&this.files[0];if(!f)return;
+      restauraTudo(f,function(err){
+        if(err){alert(err);return;}
+        alert('Restaurado. O app vai recarregar.');location.reload();
+      });
+      this.value='';
+    };
+    el('lcConta').onclick=function(){
+      if(!window.confirm('Passar a usar uma conta?\n\nOs pacientes deste aparelho continuam aqui. '+
+        'Faça o backup antes, por segurança.'))return;
+      localSet(false);location.reload();
+    };
+  }
+  function entraLocal(){
+    localSet(true);
+    try{AUTH.user=null;}catch(e){}
+    enterApp();
+  }
+
   function boot(){
+    /* sem conta: entra direto, sem tocar no Firebase */
+    if(localOnly()){enterApp();return;}
+    try{el('lgLocal').onclick=entraLocal;}catch(e){}
+    try{el('lgLocal2').onclick=entraLocal;}catch(e){}
     if(!fbStart()){
       show('login');
       el('lgForm').classList.add('hidden');
@@ -6493,8 +6605,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 33 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 33 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 34 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 34 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
