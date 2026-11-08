@@ -121,7 +121,12 @@
   #view-avatar{position:fixed;inset:0;z-index:15;background:radial-gradient(85% 58% at 50% 27%, #ffffff 0%, #f4f7fb 44%, #e5eaf1 76%, #d7dde6 100%);}
   #view-avatar::before{content:'';position:absolute;left:50%;bottom:7.5%;width:min(44%,220px);height:24px;transform:translateX(-50%);border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(50% 50% at 50% 50%, rgba(20,32,46,.17) 0%, rgba(20,32,46,.07) 52%, rgba(20,32,46,0) 74%);filter:blur(3px);}
   #view-avatar::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(72% 54% at 50% 38%, rgba(255,255,255,0) 0%, rgba(255,255,255,0) 54%, rgba(22,34,48,.06) 79%, rgba(22,34,48,.15) 100%);}
-  #stage{position:absolute;inset:0;touch-action:none;cursor:grab;z-index:1;}
+  /* O palco: um halo claro atras da figura e um assentamento mais escuro
+     embaixo. E o que separa a figura do fundo sem sujar o branco da marca. */
+  #stage{position:absolute;inset:0;touch-action:none;cursor:grab;z-index:1;
+    background:
+      radial-gradient(120% 58% at 50% 101%, rgba(16,31,42,.16) 0%, rgba(16,31,42,.05) 38%, rgba(16,31,42,0) 66%),
+      radial-gradient(74% 50% at 50% 26%, #ffffff 0%, #f6f9fb 52%, #e7edf3 100%);}
   .av-top{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) 16px 10px;z-index:6;}
   .back{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.9);border:1px solid var(--line);color:var(--txt);font-family:inherit;font-size:14px;padding:8px 13px 8px 10px;border-radius:99px;cursor:pointer;box-shadow:var(--shadow);}
   .back svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;}
@@ -218,6 +223,8 @@
     padding:11px 12px;cursor:pointer;text-align:left;width:100%;}
   .fcard .fpt{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
   .fcard .fnm{font-weight:700;color:#15242c;font-size:14px;}
+  .fcard .ftipo{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;background:#eef2f6;
+    color:#5f7079;font:600 10px/1.6 system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em;}
   .fcard .fsub{font-size:11.5px;color:#5f7079;margin-top:2px;}
   .fcard .fval{margin-left:auto;text-align:right;font-size:11.5px;color:#5f7079;}
   .fcard .fval b{display:block;font-size:15px;color:#15242c;}
@@ -228,6 +235,9 @@
     font:600 11.5px system-ui,sans-serif;color:#44555e;cursor:pointer;}
   .fseg button.on{background:#15242c;border-color:#15242c;color:#fff;}
   .fseg.col button{flex:1 1 100%;text-align:left;}
+  .fseg.nrs{gap:4px;}
+  .fseg.nrs button{flex:1 1 0;min-width:0;padding:10px 0;font-size:13px;}
+  .fseg.multi button{flex:0 1 auto;}
   .ffoto{margin-top:8px;}
   .ffoto img{width:100%;border-radius:11px;display:block;border:1px solid #e6eaf0;}
   .ffotob{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11.5px;color:#5f7079;}
@@ -448,7 +458,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 34</span>
+<span class="vtag" style="z-index:80">versão 35</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -6605,8 +6615,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 34 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 34 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 35 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 35 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6628,6 +6638,7 @@ window.addEventListener('error',function(e){
     var envA=studioEnv(renderer);if(envA)scene.environment=envA;
     studioLights(scene,0.075);
     bodyG=new THREE.Group();scene.add(bodyG);
+    try{scene.add(pisoSombra());}catch(e){}
     host.addEventListener('mousedown',down);window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
     host.addEventListener('touchstart',down,{passive:false});host.addEventListener('touchmove',move,{passive:false});
     host.addEventListener('touchend',function(e){lastDist=0;up(e);});
@@ -6636,6 +6647,38 @@ window.addEventListener('error',function(e){
     el('fbAbrir').onclick=function(){if(modoFerida)saiModoFerida();abreListaFeridas();};
     el('fMarcarSai').onclick=saiModoFerida;
     loop(0);
+  }
+  /* Sombra de contato. Nao e sombra calculada — sombra real custa um
+     passe de render a mais e o alvo e celular. E um disco com degrade
+     radial, deitado no chao, logo abaixo dos pes. O olho le a mesma
+     coisa e o telefone nao esquenta.
+
+     O corpo e sempre escalado para 5,6 unidades de altura e centrado na
+     origem, entao o pe esta em -2,8 qualquer que seja o paciente — bebe,
+     adulto ou idosa. Por isso o chao pode ser fixo.                     */
+  var PISO_Y=-2.80;
+  function pisoSombra(){
+    var N=256,cv=document.createElement('canvas');cv.width=cv.height=N;
+    var g=cv.getContext('2d');
+    var rg=g.createRadialGradient(N/2,N/2,0,N/2,N/2,N/2);
+    /* nucleo forte e queda rapida: e assim que sombra de contato se
+       parece. Degrade suave demais le como mancha, nao como chao. */
+    rg.addColorStop(0.00,'rgba(13,26,36,0.62)');
+    rg.addColorStop(0.16,'rgba(13,26,36,0.46)');
+    rg.addColorStop(0.40,'rgba(13,26,36,0.18)');
+    rg.addColorStop(0.70,'rgba(13,26,36,0.04)');
+    rg.addColorStop(1.00,'rgba(13,26,36,0.00)');
+    g.fillStyle=rg;g.fillRect(0,0,N,N);
+    var tx=new THREE.CanvasTexture(cv);
+    if(THREE.sRGBEncoding!==undefined)tx.encoding=THREE.sRGBEncoding;
+    var m=new THREE.Mesh(new THREE.PlaneGeometry(2.9,2.9),
+      new THREE.MeshBasicMaterial({map:tx,transparent:true,depthWrite:false,
+        opacity:0.95,toneMapped:false}));
+    m.rotation.x=-Math.PI/2;
+    m.position.set(0,PISO_Y,0);
+    m.renderOrder=-1;
+    m.userData.noTint=true;
+    return m;
   }
   var avRoot=null,avMixer=null,avClock=new THREE.Clock();
   function buildAvatarBody(){
@@ -6674,8 +6717,8 @@ window.addEventListener('error',function(e){
          alvo ou se o app quebrou — nao sao a mesma coisa.               */
       window.__mbFer={pele:!!fPele,nome:fPele?fPele.name:null,hits:hp.length,uv:hp.length?!!hp[0].uv:null};
       if(hp.length&&hp[0].uv){
-        saiModoFerida();
-        criaFerida(hp[0].uv,fPele.worldToLocal(hp[0].point.clone()));
+        var t=marcaTipo;saiModoFerida();
+        criaAchado(t,hp[0].uv,fPele.worldToLocal(hp[0].point.clone()));
       }else{
         var av=el('fMarcar');
         if(av)av.firstChild.nodeValue=fPele?'Fora do corpo — toque sobre a pele ':
@@ -6687,7 +6730,7 @@ window.addEventListener('error',function(e){
        menor e esta por cima, entao quem tocou nela quis tocar nela. */
     var hf=fMarks.length?rc.intersectObjects(fMarks,false):[];
     if(hf.length&&hf[0].object.userData&&hf[0].object.userData.ferida){
-      abreFerida(hf[0].object.userData.ferida);return;
+      abreAchado(hf[0].object.userData.ferida);return;
     }
     var cores=markers.map(function(g){return g.userData.core;});
     var hit=rc.intersectObjects(cores,false);
@@ -6939,6 +6982,54 @@ window.addEventListener('error',function(e){
     for(var i=0;i<FER_ETIO.length;i++)if(FER_ETIO[i][0]===k)return FER_ETIO[i][1];
     return 'Não definida';
   }
+  /* ---- escalas da dor -------------------------------------------------
+     NRS 0 a 10. Os rotulos leve/moderada/intensa usam o corte mais comum
+     (1-3, 4-6, 7-10), mas ele NAO e consenso: a literatura mostra que o
+     corte "otimo" muda com a populacao, com o sexo e ate com o grau de
+     catastrofizacao, e varios estudos usam 1-4 / 5-6 / 7-10. Por isso o
+     numero manda e o rotulo e so apoio — e isso fica escrito na ficha.
+
+     O que e solido e a MUDANCA no mesmo doente: queda de cerca de 2
+     pontos, ou de cerca de 30%, e a menor diferenca que o doente percebe
+     como melhora relevante (Farrar 2001, 2.724 doentes). Esse numero vem
+     de ensaios de dor cronica, entao a ficha diz de onde ele vem.      */
+  var DOR_CARATER=[['pontada','Pontada / facada'],['queimacao','Queimação'],
+                   ['peso','Peso / aperto'],['colica','Cólica'],
+                   ['choque','Choque elétrico'],['formigamento','Formigamento / agulhadas'],
+                   ['latejante','Latejante']];
+  var DOR_NEURO={queimacao:1,choque:1,formigamento:1};
+  var DOR_PADRAO=[['continua','Contínua'],['intermitente','Intermitente'],
+                  ['movimento','Ao movimento'],['noturna','Piora à noite']];
+  function dorFaixa(n){
+    if(n==null)return null;
+    if(n<=0)return 'Sem dor';
+    if(n<=3)return 'Leve';
+    if(n<=6)return 'Moderada';
+    return 'Intensa';
+  }
+  function dorCarNome(k){
+    for(var i=0;i<DOR_CARATER.length;i++)if(DOR_CARATER[i][0]===k)return DOR_CARATER[i][1];
+    return k;
+  }
+  function dorPadNome(k){
+    for(var i=0;i<DOR_PADRAO.length;i++)if(DOR_PADRAO[i][0]===k)return DOR_PADRAO[i][1];
+    return k;
+  }
+  /* mudanca entre a primeira e a ultima avaliacao */
+  function dorDelta(a){
+    var r=ferRegs(a); if(r.length<2)return null;
+    var n0=r[0].nrs, n1=r[r.length-1].nrs;
+    if(n0==null||n1==null)return null;
+    var pts=n0-n1, pct=n0>0?(pts/n0*100):0;
+    return {pts:pts,pct:pct,n0:n0,n1:n1,
+            dias:Math.round(((r[r.length-1].ts||0)-(r[0].ts||0))/86400000),
+            relevante:(pts>=2||pct>=30)};
+  }
+  function dorNeuro(r){
+    var c=(r&&r.carater)||[];
+    for(var i=0;i<c.length;i++)if(DOR_NEURO[c[i]])return true;
+    return false;
+  }
   function ferArea(r){
     if(r==null||r.comp==null||r.larg==null)return null;
     return r.comp*r.larg;
@@ -6954,7 +7045,14 @@ window.addEventListener('error',function(e){
   function ferUltimo(a){var r=ferRegs(a);return r.length?r[r.length-1]:null;}
   function ferCor(a){
     if(a.fechado)return '#2e9e6b';
-    var u=ferUltimo(a); var p=u?ferPush(u):null;
+    var u=ferUltimo(a);
+    if(a.tipo==='dor'){
+      var n=u?u.nrs:null;
+      if(n==null)return '#b08a2e';
+      if(n<=0)return '#2e9e6b';
+      return n<=3?'#b08a2e':(n<=6?'#d98324':'#c2302b');
+    }
+    var p=u?ferPush(u):null;
     if(p==null)return '#b08a2e';
     if(u&&u.infec)return '#c2302b';
     return p>=12?'#c2302b':(p>=7?'#d98324':'#b08a2e');
@@ -6987,6 +7085,8 @@ window.addEventListener('error',function(e){
 
   /* ---- marcas no corpo ------------------------------------------------ */
   var fMarks=[], fPele=null, modoFerida=false, ferSel=null;
+  /* qual especie esta sendo marcada: 'ferida' ou 'dor' */
+  var marcaTipo='ferida';
   function alturaReal(){
     var h=profile&&parseFloat(profile.altura);
     return (h&&h>30&&h<260)?h:170;
@@ -7014,8 +7114,16 @@ window.addEventListener('error',function(e){
       var q=pontoDoUv(fPele,a.uv[0],a.uv[1]);
       if(!q)return;
       var u=ferUltimo(a);
-      var larg=(u&&u.larg!=null&&u.comp!=null)?Math.max(u.comp,u.larg):1.6;
-      var r=raioLocal(larg);
+      var r;
+      if(a.tipo==='dor'){
+        /* a dor nao tem tamanho medido: o circulo cresce um pouco com a
+           intensidade so para a leitura ser imediata no corpo */
+        var n=(u&&u.nrs!=null)?u.nrs:5;
+        r=raioLocal(1.1+n*0.22);
+      }else{
+        var larg=(u&&u.larg!=null&&u.comp!=null)?Math.max(u.comp,u.larg):1.6;
+        r=raioLocal(larg);
+      }
       var cor=SC(parseInt(ferCor(a).slice(1),16));
       var mat=new THREE.MeshStandardMaterial({color:cor,roughness:0.42,metalness:0,
         emissive:cor.clone().multiplyScalar(0.55),emissiveIntensity:0.9,
@@ -7031,29 +7139,32 @@ window.addEventListener('error',function(e){
   }
   function atualizaBotaoFerida(){
     var b=el('fbCount');if(!b)return;
-    var n=achadosDe('ferida').filter(function(a){return !a.fechado;}).length;
+    var n=achados.itens.filter(function(a){return !a.fechado;}).length;
     b.textContent=n?String(n):'';
     b.classList.toggle('on',!!n);
   }
 
   /* ---- criar / abrir --------------------------------------------------- */
-  function criaFerida(uv,pLocal){
+  function criaAchado(tipo,uv,pLocal){
     var hoje=new Date();
     var iso=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
-    var a={id:achadoNovoId(),tipo:'ferida',titulo:'',etiologia:'',
+    var a={id:achadoNovoId(),tipo:tipo||'ferida',titulo:'',etiologia:'',
            uv:[uv.x,uv.y],regiao:nomeDaRegiao(pLocal),
            inicio:iso,fechado:null,registros:[]};
     a.titulo=a.regiao.charAt(0).toUpperCase()+a.regiao.slice(1);
     achados.itens.push(a);saveAchados();ptPersist();
     desenhaFeridas(avRoot);
-    abreFerida(a.id);
+    abreAchado(a.id);
     return a;
   }
-  function abreFerida(id){
+  function abreAchado(id){
+    var a=achadoPorId(id);
     ferSel=id;selected=null;
     markers.forEach(function(g){g.userData.core.scale.setScalar(1);});
     if(ring)ring.material.opacity=0;
-    legendOn(false);renderFerida(id);el('sheet').classList.add('open');
+    legendOn(false);
+    if(a&&a.tipo==='dor')renderDor(id);else renderFerida(id);
+    el('sheet').classList.add('open');
   }
   function abreListaFeridas(){
     ferSel=null;selected=null;legendOn(false);
@@ -7075,32 +7186,45 @@ window.addEventListener('error',function(e){
     return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');
   }
   function renderListaFeridas(){
-    var lst=achadosDe('ferida');
+    var lst=achados.itens.slice();
     lst.sort(function(x,y){return (x.fechado?1:0)-(y.fechado?1:0)||((y.registros[0]||{}).ts||0)-((x.registros[0]||{}).ts||0);});
     var corpo=lst.length?('<div class="flista">'+lst.map(function(a){
-      var u=ferUltimo(a), ar=u?ferArea(u):null, p=u?ferPush(u):null;
+      var u=ferUltimo(a), dir, val;
+      if(a.tipo==='dor'){
+        var n=u?u.nrs:null;
+        dir=(u&&u.carater&&u.carater.length?dorCarNome(u.carater[0]):'Dor')+' · desde '+dataBR(a.inicio)+
+            (a.fechado?' · <b style="color:#2e9e6b">resolvida</b>':'');
+        val=(n!=null)?('<b>'+n+'/10</b>'+esc(dorFaixa(n))):'sem registro';
+      }else{
+        var ar=u?ferArea(u):null, p=u?ferPush(u):null;
+        dir=esc(etioNome(a.etiologia))+' · desde '+dataBR(a.inicio)+
+            (a.fechado?' · <b style="color:#2e9e6b">cicatrizada</b>':'');
+        val=(ar!=null)?('<b>'+numBR(ar,1)+' cm²</b>'+(p!=null?('PUSH '+p):'')):'sem medição';
+      }
       return '<button class="fcard" data-f="'+a.id+'">'+
         '<span class="fpt" style="background:'+ferCor(a)+'"></span>'+
-        '<span><span class="fnm">'+esc(a.titulo||a.regiao)+'</span>'+
-        '<span class="fsub">'+esc(etioNome(a.etiologia))+' · desde '+dataBR(a.inicio)+
-        (a.fechado?(' · <b style="color:#2e9e6b">cicatrizada</b>'):'')+'</span></span>'+
-        '<span class="fval">'+(ar!=null?('<b>'+numBR(ar,1)+' cm²</b>'+(p!=null?('PUSH '+p):'')):'sem medição')+'</span>'+
-        '</button>';
-    }).join('')+'</div>'):'<p class="note">Nenhuma lesão marcada ainda.</p>';
+        '<span><span class="fnm">'+esc(a.titulo||a.regiao)+
+        '<span class="ftipo">'+(a.tipo==='dor'?'dor':'ferida')+'</span></span>'+
+        '<span class="fsub">'+dir+'</span></span>'+
+        '<span class="fval">'+val+'</span></button>';
+    }).join('')+'</div>'):'<p class="note">Nada marcado no corpo ainda.</p>';
 
     el('sheetBody').innerHTML=
-      '<div class="shead"><div><div class="fr">Feridas e lesões</div>'+
-      '<div class="tech">Marcadas no corpo e acompanhadas no tempo</div></div>'+
+      '<div class="shead"><div><div class="fr">Marcado no corpo</div>'+
+      '<div class="tech">Feridas e dor, acompanhadas no tempo</div></div>'+
       '<button class="sclose" id="sx" aria-label="Fechar">&times;</button></div>'+
       corpo+
-      '<div class="seclab">Nova lesão</div>'+
-      '<p class="note">Toque em <b>Marcar no corpo</b> e depois no ponto da pele onde está a lesão. '+
+      '<div class="seclab">Marcar agora</div>'+
+      '<p class="note">Escolha o que vai marcar e depois toque no ponto do corpo. '+
       'O ponto fica preso à anatomia: ele continua no mesmo lugar se o paciente mudar de peso ou de faixa etária.</p>'+
-      '<div class="sform"><button class="sbtn" id="fNovo" style="width:100%">Marcar no corpo</button></div>';
+      '<div class="sform" style="gap:8px">'+
+        '<button class="sbtn" id="fNovo" style="flex:1">Ferida</button>'+
+        '<button class="sbtn" id="dNovo" style="flex:1">Dor</button></div>';
     el('sx').onclick=fechaFerida;
-    el('fNovo').onclick=function(){fechaFerida();entraModoFerida();};
+    el('fNovo').onclick=function(){fechaFerida();entraModoFerida('ferida');};
+    el('dNovo').onclick=function(){fechaFerida();entraModoFerida('dor');};
     [].forEach.call(el('sheetBody').querySelectorAll('.fcard'),function(b){
-      b.onclick=function(){abreFerida(b.dataset.f);};});
+      b.onclick=function(){abreAchado(b.dataset.f);};});
   }
 
   function renderFerida(id){
@@ -7302,9 +7426,181 @@ window.addEventListener('error',function(e){
       saveAchados();ptPersist();desenhaFeridas(avRoot);renderFerida(id);
     };
   }
-  function entraModoFerida(){
+
+  /* ---- a ficha da dor -------------------------------------------------- */
+  function renderDor(id){
+    var a=achadoPorId(id); if(!a){abreListaFeridas();return;}
+    var regs=ferRegs(a), u=ferUltimo(a);
+    var D=dorDelta(a), dias=ferDias(a);
+
+    var cab='<div class="shead"><div style="display:flex;align-items:center;gap:10px">'+
+      '<span class="fpt" style="width:13px;height:13px;border-radius:50%;background:'+ferCor(a)+'"></span>'+
+      '<div><div class="fr">'+esc(a.titulo||a.regiao)+'</div>'+
+      '<div class="tech">Dor · '+esc(a.regiao)+(dias!=null?(' · '+dias+' dia'+(dias===1?'':'s')):'')+'</div></div></div>'+
+      '<button class="sclose" id="sx" aria-label="Fechar">&times;</button></div>';
+
+    var resumo='';
+    if(u&&u.nrs!=null){
+      resumo+='<div class="fisbig"><span class="v">'+u.nrs+'</span><span class="u">de 10 · '+dataCurta(u.ts)+'</span></div>'+
+        '<div class="fistags"><span class="fistag"><b>'+esc(dorFaixa(u.nrs))+'</b><span>rótulo de apoio</span></span>';
+      (u.carater||[]).forEach(function(c){resumo+='<span class="fistag"><b>'+esc(dorCarNome(c))+'</b></span>';});
+      (u.padrao||[]).forEach(function(c){resumo+='<span class="fistag"><b>'+esc(dorPadNome(c))+'</b></span>';});
+      resumo+='</div>';
+      if(u.irradia)resumo+='<div class="fisconta"><span class="c">Irradia para '+esc(u.irradia)+'</span></div>';
+      if(D){
+        var cai=D.pts>0;
+        resumo+='<div class="fisrisk">'+(cai?'Caiu':(D.pts<0?'Subiu':'Sem mudança de'))+' '+
+          Math.abs(D.pts)+' ponto'+(Math.abs(D.pts)===1?'':'s')+' ('+numBR(Math.abs(D.pct),0)+'%) em '+
+          D.dias+' dias: '+D.n0+' → '+D.n1+'. '+
+          (cai?(D.relevante
+              ? 'Chega aos cerca de 2 pontos ou 30% que o doente costuma perceber como melhora relevante.'
+              : 'Ainda abaixo dos cerca de 2 pontos ou 30% que o doente costuma perceber como melhora relevante.')
+             :'')+'</div>';
+      }
+      if(dorNeuro(u)){
+        resumo+='<div class="fisrisk">Queimação, choque ou formigamento sugerem <b>caráter neuropático</b>. '+
+          'Isto é só o que o doente descreveu — confirmar pede instrumento próprio (DN4, LANSS) e exame.</div>';
+      }
+    }else{
+      resumo+='<p class="note">Sem registro ainda. Lance o primeiro abaixo.</p>';
+    }
+
+    var serie=regs.filter(function(r){return r.nrs!=null;})
+                  .map(function(r){return {v:r.nrs,date:dataCurta(r.ts)};});
+    var graf=serie.length>1?('<div class="fischart"><div class="fischartrot">Intensidade da dor (0 a 10)</div>'+
+      chartSvg(serie)+'</div>'):'';
+
+    var linhas=regs.slice().reverse().map(function(r){
+      var det=[];
+      if(r.nrs!=null)det.push(r.nrs+'/10 · '+dorFaixa(r.nrs).toLowerCase());
+      (r.carater||[]).forEach(function(c){det.push(dorCarNome(c).toLowerCase());});
+      (r.padrao||[]).forEach(function(c){det.push(dorPadNome(c).toLowerCase());});
+      if(r.irradia)det.push('irradia para '+r.irradia);
+      if(r.piora)det.push('piora: '+r.piora);
+      if(r.melhora)det.push('melhora: '+r.melhora);
+      return '<div class="fmed"><div class="fd">'+dataCurta(r.ts)+'</div>'+
+        '<div class="fi">'+esc(det.join(' · '))+(r.nota?('<br>'+esc(r.nota)):'')+'</div>'+
+        '<button class="del" data-r="'+(r.ts||0)+'" aria-label="Apagar">&times;</button></div>';
+    }).join('');
+
+    var nrsBt='';
+    for(var i=0;i<=10;i++)nrsBt+='<button type="button" data-v="'+i+'">'+i+'</button>';
+    var form=
+      '<div class="seclab">Novo registro</div>'+
+      '<div class="fisop"><label>Intensidade agora (0 = sem dor, 10 = a pior imaginável)</label>'+
+        '<div class="fseg nrs" id="do_nrs" data-v="">'+nrsBt+'</div></div>'+
+      '<div class="fisop" style="margin-top:10px"><label>Como é a dor (pode marcar mais de uma)</label>'+
+        '<div class="fseg multi" id="do_car" data-v="">'+
+        DOR_CARATER.map(function(o){return '<button type="button" data-v="'+o[0]+'">'+esc(o[1])+'</button>';}).join('')+
+        '</div></div>'+
+      '<div class="fisop" style="margin-top:10px"><label>Quando aparece</label>'+
+        '<div class="fseg multi" id="do_pad" data-v="">'+
+        DOR_PADRAO.map(function(o){return '<button type="button" data-v="'+o[0]+'">'+esc(o[1])+'</button>';}).join('')+
+        '</div></div>'+
+      '<div class="fgrid" style="margin-top:10px">'+
+      '<div class="fisop"><label>Irradia para</label><input id="do_irr" placeholder="opcional"></div>'+
+      '<div class="fisop"><label>O que piora</label><input id="do_pio" placeholder="opcional"></div>'+
+      '<div class="fisop"><label>O que melhora</label><input id="do_mel" placeholder="opcional"></div>'+
+      '<div class="fisop"><label>Observação</label><input id="do_nota" placeholder="opcional"></div>'+
+      '</div>'+
+      '<div id="doErr" class="fiserr"></div>'+
+      '<div class="sform"><button class="sbtn" id="doGo" style="width:100%">Salvar registro</button></div>';
+
+    var notas=
+      '<div class="fisnota">Os rótulos leve, moderada e intensa usam o corte mais comum (1-3, 4-6, 7-10), '+
+      'mas ele <b>não é consenso</b>: o corte muda conforme a população estudada, e vários trabalhos usam 1-4 / 5-6 / 7-10. '+
+      'O número e a mudança dele neste mesmo doente valem mais que o rótulo.</div>'+
+      '<div class="fisnota">Os cerca de 2 pontos ou 30% vêm de ensaios de <b>dor crônica</b> (Farrar 2001, 2.724 doentes). '+
+      'Em dor aguda ou pós-operatória o limiar pode ser outro.</div>'+
+      '<div class="fisfonte">NRS 0-10. Diferença mínima clinicamente relevante: Farrar JT et al., Pain 2001;94(2):149-158.</div>';
+
+    var rodape=
+      '<div class="seclab">A dor</div>'+
+      '<div class="fisop"><label>Nome</label><input id="da_tit" value="'+esc(a.titulo||'')+'"></div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Região</label><input id="da_reg" value="'+esc(a.regiao||'')+'"></div>'+
+      '<div class="fisop" style="margin-top:8px"><label>Início</label><input id="da_ini" type="date" value="'+esc(a.inicio||'')+'"></div>'+
+      '<div class="sform" style="gap:8px"><button class="sbtn" id="daFech" style="flex:1">'+
+        (a.fechado?'Reabrir':'Marcar como resolvida')+'</button>'+
+        '<button class="sbtn" id="daDel" style="flex:0 0 auto;background:#fff;color:#c2302b;border:1px solid #e8b4b1">Apagar</button></div>';
+
+    el('sheetBody').innerHTML=cab+resumo+graf+
+      (linhas?('<div class="seclab">Registros</div>'+linhas):'')+
+      form+notas+rodape+
+      '<div class="sform"><button class="sbtn" id="daVoltar" style="width:100%;background:#fff;color:#44555e;border:1px solid #dfe4ea">Tudo que está marcado</button></div>';
+
+    el('sx').onclick=fechaFerida;
+    el('daVoltar').onclick=abreListaFeridas;
+
+    /* escolha unica */
+    (function(){
+      var g=el('do_nrs');
+      [].forEach.call(g.querySelectorAll('button'),function(b){
+        b.onclick=function(){
+          [].forEach.call(g.querySelectorAll('button'),function(x){x.classList.remove('on');});
+          b.classList.add('on');g.setAttribute('data-v',b.dataset.v);};});
+    })();
+    /* escolha multipla: a dor costuma ser mais de uma coisa ao mesmo tempo */
+    function multiLiga(gid){
+      var g=el(gid);if(!g)return;
+      [].forEach.call(g.querySelectorAll('button'),function(b){
+        b.onclick=function(){b.classList.toggle('on');};});
+    }
+    function multiVal(gid){
+      var g=el(gid);if(!g)return [];
+      return [].filter.call(g.querySelectorAll('button'),function(b){return b.classList.contains('on');})
+               .map(function(b){return b.dataset.v;});
+    }
+    multiLiga('do_car');multiLiga('do_pad');
+
+    function salvaCab(){
+      a.titulo=(el('da_tit').value||'').trim();
+      a.regiao=(el('da_reg').value||'').trim()||a.regiao;
+      a.inicio=el('da_ini').value||a.inicio;
+      saveAchados();ptPersist();
+    }
+    ['da_tit','da_reg','da_ini'].forEach(function(k){el(k).onchange=function(){salvaCab();};});
+
+    el('daFech').onclick=function(){
+      salvaCab();
+      if(a.fechado){a.fechado=null;}
+      else{var dt=new Date();a.fechado=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');}
+      saveAchados();ptPersist();desenhaFeridas(avRoot);renderDor(id);
+    };
+    el('daDel').onclick=function(){
+      if(!window.confirm('Apagar esta dor e todos os registros dela?'))return;
+      achados.itens=achados.itens.filter(function(x){return x.id!==a.id;});
+      saveAchados();ptPersist();desenhaFeridas(avRoot);abreListaFeridas();
+    };
+    [].forEach.call(el('sheetBody').querySelectorAll('.fmed .del'),function(b){
+      b.onclick=function(){
+        var ts=parseInt(b.dataset.r,10);
+        a.registros=(a.registros||[]).filter(function(r){return (r.ts||0)!==ts;});
+        saveAchados();ptPersist();desenhaFeridas(avRoot);renderDor(id);
+      };});
+
+    el('doGo').onclick=function(){
+      var er=el('doErr');er.textContent='';
+      var nv=el('do_nrs').getAttribute('data-v');
+      if(nv===''){er.textContent='Escolha a intensidade, de 0 a 10.';return;}
+      salvaCab();
+      var reg={ts:Date.now(),nrs:parseInt(nv,10),
+               carater:multiVal('do_car'),padrao:multiVal('do_pad'),
+               irradia:(el('do_irr').value||'').trim(),
+               piora:(el('do_pio').value||'').trim(),
+               melhora:(el('do_mel').value||'').trim(),
+               nota:(el('do_nota').value||'').trim()};
+      a.registros=a.registros||[];a.registros.push(reg);
+      saveAchados();ptPersist();desenhaFeridas(avRoot);renderDor(id);
+    };
+  }
+  function entraModoFerida(tipo){
+    marcaTipo=tipo||'ferida';
     modoFerida=true;
-    el('fMarcar').classList.remove('hidden');
+    var b=el('fMarcar');
+    b.firstChild.nodeValue=(marcaTipo==='dor')
+      ? 'Toque onde dói '
+      : 'Toque na pele, onde está a lesão ';
+    b.classList.remove('hidden');
     legendOn(false);
   }
   function saiModoFerida(){
