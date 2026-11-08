@@ -458,7 +458,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 38</span>
+<span class="vtag" style="z-index:80">versão 39</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -5738,6 +5738,18 @@ window.addEventListener('error',function(e){
     var faixa=faixaEtaria(P&&P.age);
     return faixa+'-'+((P&&P.female)?'f':'m')+'-'+porteDoCorpo(faixa);
   }
+  /* MARCA DE VERSAO DOS ARQUIVOS 3D.
+     Era este o defeito que fazia parecer que nada mudava. O index.html
+     tem data nova a cada publicacao, entao o navegador o rebaixa — mas os
+     corpos, a anatomia e a textura do rosto eram pedidos SEM marca
+     nenhuma. O celular guardava os GLB e nunca mais os buscava: chegava o
+     programa novo e o corpo velho. Toda correcao de geometria desde a
+     versao 30 — a gola, o cabelo, o quadrado na coxa, o cabelo feminino —
+     ficou invisivel por causa disto.
+     A marca sobe junto com a versao; quando ela muda, o endereco muda, e
+     o navegador e obrigado a buscar de novo.                            */
+  var ASSET_V='39';
+  function comVersao(u){return u+(u.indexOf('?')>=0?'&':'?')+'v='+ASSET_V;}
   var CORPO_ARQ='corpo.glb';
   var CORPO_CHAVE=null;      /* qual tipo de corpo esta carregado */
   var CORPO_NOVO=false;      /* true quando o corpo vestido foi carregado */
@@ -5760,6 +5772,7 @@ window.addEventListener('error',function(e){
     var nome=MEDIDAS[chave]?('corpos/corpo-'+chave+'.glb'):CORPO_ARQ;
     var url=nome;
     try{url=new URL(nome,location.href).href;}catch(e){}
+    url=comVersao(url);
     var x;
     try{x=new XMLHttpRequest();x.open('GET',url,true);x.responseType='arraybuffer';}
     catch(e){embutido();return;}
@@ -5946,6 +5959,7 @@ window.addEventListener('error',function(e){
     }
     var url=ANAT_ARQ;
     try{url=new URL(ANAT_ARQ,location.href).href;}catch(e){}
+    url=comVersao(url);
     var x;
     try{x=new XMLHttpRequest();x.open('GET',url,true);x.responseType='arraybuffer';}
     catch(e){pronto();return;}
@@ -6459,6 +6473,7 @@ window.addEventListener('error',function(e){
     try{
       var url=ROSTO_ARQ;
       try{url=new URL(ROSTO_ARQ,location.href).href;}catch(e){}
+      url=comVersao(url);
       var t=new THREE.TextureLoader().load(url,function(){},undefined,function(){ROSTO_TEX=false;});
       if(THREE.sRGBEncoding!==undefined)t.encoding=THREE.sRGBEncoding;
       t.flipY=false;                /* glTF ja vem com o V invertido */
@@ -6618,8 +6633,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 38 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 38 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 39 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 39 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
