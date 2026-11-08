@@ -458,7 +458,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 36</span>
+<span class="vtag" style="z-index:80">versão 37</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -6607,16 +6607,19 @@ window.addEventListener('error',function(e){
     },chaveP);
   }
 
-  var homeRoot=null,hMixer=null,hClock=new THREE.Clock();
+  var homeRoot=null,homeChave=null,hMixer=null,hClock=new THREE.Clock();
   function buildHomeBody(){
     var P=bodyParams();
+    var ch=chaveCorpo(P);
+    if(homeRoot&&homeChave!==ch){homeRoot=null;hMixer=null;}
+    homeChave=ch;
     if(homeRoot){tintModel(homeRoot,P,true);return;}
     clearGroup(hbody);hbody.scale.set(1,1,1);
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 36 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 36 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 37 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 37 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
@@ -6680,9 +6683,24 @@ window.addEventListener('error',function(e){
     m.userData.noTint=true;
     return m;
   }
-  var avRoot=null,avMixer=null,avClock=new THREE.Clock();
+  /* A CHAVE DO CORPO.
+     O avatar era reaproveitado enquanto existisse, e so repintado. Isso
+     fazia o corpo do primeiro paciente ficar na tela para sempre: trocar
+     de paciente mudava nome, peso e ficha, mas o boneco continuava sendo
+     o anterior — uma mulher magra de 28 anos aparecia no lugar de um
+     homem de 74 e 96 kg. Agora o cache so vale enquanto a chave do corpo
+     (faixa etaria, sexo e porte) for a mesma.                          */
+  function chaveCorpo(P){
+    try{ if(typeof corpoChave==='function')return corpoChave(P); }catch(e){}
+    return (P&&P.female?'f':'m')+'-'+((P&&P.scale)||1);
+  }
+  var avRoot=null,avChave=null,avMixer=null,avClock=new THREE.Clock();
   function buildAvatarBody(){
     var P=bodyParams();try{buildLegend();}catch(e){}
+    var ch=chaveCorpo(P);
+    if(avRoot&&avChave!==ch){avRoot=null;avMixer=null;}   /* outro corpo: refaz */
+    avChave=ch;
+    try{window.__mbCorpo=ch;}catch(e){}   /* diagnostico: qual corpo esta na tela */
     if(avRoot){tintModel(avRoot,P,false);selected=null;rotY=0.35;rotX=0;idle=0;zoom=avZoom;if(ring)ring.material.opacity=0;markers.forEach(function(g){g.userData.core.scale.setScalar(1);});el('sheet').classList.remove('open');legendOn(true);try{buildLegend();}catch(e){}return;}
     clearGroup(bodyG);bodyG.scale.set(1,1,1);markers=[];
     addBody(bodyG,P);linearizeMats(bodyG);avZoom=9.6*(P.scale||1);zoom=avZoom;
