@@ -206,6 +206,17 @@
   .lcb{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
   .lcb button{background:#fff;border:1px solid #e4d9bf;border-radius:9px;padding:7px 11px;
     font:600 12px system-ui,sans-serif;color:#7a5a12;cursor:pointer;}
+  .anitem{background:#fff;border:1px solid #e6eaf0;border-left-width:4px;border-radius:12px;
+    padding:11px 13px;margin-bottom:8px;}
+  .anitem.alerta{border-left-color:#c2302b;}
+  .anitem.atencao{border-left-color:#d98324;}
+  .anitem.info{border-left-color:#b6c0c6;}
+  .anitem .anh{font-weight:700;font-size:13.5px;color:#15242c;line-height:1.4;}
+  .anitem .anq{font-weight:600;font-size:11px;color:#5f7079;margin-left:7px;}
+  .anitem .anc{font-size:12.5px;color:#44555e;margin-top:4px;line-height:1.55;}
+  .anitem .ann{font-size:11.5px;color:#6c6350;background:#fff8ec;border-radius:8px;
+    padding:7px 9px;margin-top:7px;line-height:1.5;}
+  .anitem .anf{font-size:11px;color:#8a949b;margin-top:6px;line-height:1.45;}
   .fbtn{position:absolute;right:14px;top:92px;width:42px;height:42px;border-radius:50%;border:1px solid #e3e7ed;
     background:#fff;color:#c2302b;display:flex;align-items:center;justify-content:center;
     box-shadow:0 3px 12px rgba(16,31,42,.13);cursor:pointer;z-index:6;}
@@ -458,7 +469,7 @@
 </style>
 </head>
 <body>
-<span class="vtag" style="z-index:80">versão 40</span>
+<span class="vtag" style="z-index:80">versão 41</span>
 <noscript><div style="position:fixed;inset:0;background:#fff;z-index:999;padding:40px 24px;font-family:sans-serif;color:#1c2130">
 <h2 style="margin-bottom:10px">O MYBODY não conseguiu iniciar</h2>
 <p style="line-height:1.5;color:#6b7286">Este visualizador não executa aplicativos. Extraia o arquivo do ZIP e abra o <b>index.html</b> no Chrome ou Safari — ou acesse pelo link do app publicado.</p>
@@ -659,6 +670,8 @@
     <div class="center scroll">
       <div class="topbar anim"><div class="brand"><div class="w2" style="font-size:20px">Evolução</div>
         <div class="sub">Sua evolução</div></div></div>
+      <div class="sec anim a2"><div class="lab"><h3>O que mudou</h3></div>
+        <div id="analiseBox"></div></div>
       <div class="sec anim a2"><div class="lab"><h3>Evolução</h3></div>
         <div class="selrow" id="chartSel"></div>
         <div class="chartcard"><div class="charttitle" id="chartTitle"></div><div class="chart" id="chart"></div></div></div>
@@ -5400,7 +5413,161 @@ window.addEventListener('error',function(e){
     if(pts.length<2){el('chart').innerHTML='<div class="chartempty">'+(pts.length?('Só há um valor numérico ('+esc(pts[0].label)+'). Registre mais para ver a linha.'):'Sem dados numéricos ainda.')+'</div>';return;}
     el('chart').innerHTML=chartSvg(pts);
   }
+
+  /* ================= ANALISE LONGITUDINAL (v41) =================
+     Le o que ja esta guardado e aponta o que MUDOU no tempo.
+
+     Por que determinística, e nao um modelo de linguagem: aqui cada
+     achado mostra a conta e cita o criterio publicado, entao da para
+     conferir linha por linha. Um modelo de linguagem produz diferencial
+     fluente, confiante e as vezes errado, e sem validacao nao ha como
+     separar um do outro.
+
+     E por que ela nao nomeia doenca em lugar nenhum: a ANVISA (RDC
+     657/2022) trata como dispositivo medico o software que sugere
+     diagnostico, enquanto um que mostra ao medico o protocolo e a conta
+     inteiros e lido como livro de referencia eletronico. O que sai daqui
+     e sempre "a variacao atende ao criterio X" — quem conclui e o
+     medico.                                                            */
+  function serieSis(id){
+    var l=(SYS[id]&&SYS[id].fis)||[];
+    return l.filter(function(h){return h&&h.ts;}).slice().sort(function(a,b){return a.ts-b.ts;});
+  }
+  var DIA=86400000;
+  function emDias(ms){
+    var d=Math.round(ms/DIA);
+    if(d<1)return 'menos de um dia';
+    if(d<60)return d+' dia'+(d===1?'':'s');
+    var m=Math.round(d/30.44);
+    return m<24?(m+' mes'+(m===1?'':'es')):(Math.round(d/365.25)+' anos');
+  }
+
+  /* ---- LRA pelo criterio de creatinina do KDIGO --------------------
+     O KDIGO compara com a creatinina BASAL do doente. O app nao sabe
+     qual e a basal, entao usa a MENOR do periodo como aproximacao — e
+     diz isso na tela, porque muda a leitura.                           */
+  function achadoLRA(){
+    var cr=serieSis('renal').filter(function(h){return h.v&&h.v.creat!=null&&!isNaN(h.v.creat);})
+                            .map(function(h){return {ts:h.ts,c:parseFloat(h.v.creat)};});
+    if(cr.length<2)return null;
+    var achado=null;
+    for(var i=1;i<cr.length;i++){
+      var base48=null,base7=null;
+      for(var j=0;j<i;j++){
+        var dt=cr[i].ts-cr[j].ts;
+        if(dt>0&&dt<=2*DIA&&(base48==null||cr[j].c<base48))base48=cr[j].c;
+        if(dt>0&&dt<=7*DIA&&(base7==null||cr[j].c<base7))base7=cr[j].c;
+      }
+      var subiu=(base48!=null)&&(cr[i].c-base48>=0.3);
+      var raz=(base7!=null&&base7>0)?(cr[i].c/base7):null;
+      if(!subiu&&!(raz!=null&&raz>=1.5))continue;
+      var est=1,porque;
+      if(raz!=null&&raz>=3.0){est=3;}
+      else if(raz!=null&&raz>=2.0){est=2;}
+      if(cr[i].c>=4.0&&(subiu||(raz!=null&&raz>=1.5)))est=Math.max(est,3);
+      if(raz!=null&&raz>=1.5){
+        porque='a creatinina foi de '+numBR(base7,2)+' para '+numBR(cr[i].c,2)+
+               ' mg/dL ('+numBR(raz,2).replace('.',',')+'× a menor dos 7 dias anteriores)';
+      }else{
+        porque='a creatinina subiu '+numBR(cr[i].c-base48,2)+' mg/dL em 48 h ('+
+               numBR(base48,2)+' → '+numBR(cr[i].c,2)+')';
+      }
+      achado={grau:est>=2?'alerta':'atencao',sis:'renal',
+        titulo:'Variação de creatinina compatível com o estágio '+est+' do KDIGO',
+        conta:porque+'.',
+        quando:'em '+new Date(cr[i].ts).toLocaleDateString('pt-BR'),
+        nota:'O KDIGO compara com a creatinina basal do doente. Aqui a basal é aproximada '+
+             'pela menor medida da janela, porque o app não sabe qual é a basal real — '+
+             'confira antes de concluir.',
+        fonte:'KDIGO 2012, critério de creatinina: alta ≥ 0,3 mg/dL em 48 h, ou ≥ 1,5× a basal em 7 dias. '+
+              'Estágio 1: 1,5–1,9×. Estágio 2: 2,0–2,9×. Estágio 3: ≥ 3,0× ou creatinina ≥ 4,0 mg/dL.'};
+    }
+    return achado;
+  }
+
+  /* ---- progressao da doenca renal cronica -------------------------- */
+  function achadosDRC(){
+    var out=[];
+    var s=serieSis('renal').filter(function(h){return h.out&&h.out.serie!=null&&!isNaN(h.out.serie);});
+    if(s.length<3)return out;
+    var T=tendenciaAno(s,null,null);
+    var meses=(s[s.length-1].ts-s[0].ts)/(30.44*DIA);
+    if(T&&T.porAno<-5&&meses>=6){
+      out.push({grau:'alerta',sis:'renal',
+        titulo:'Queda da TFG acima do limite de progressão rápida do KDIGO',
+        conta:'a TFG estimada cai '+numBR(Math.abs(T.porAno),1)+' mL/min/1,73 m² por ano, '+
+              'pela reta dos '+T.n+' registros de '+emDias(s[s.length-1].ts-s[0].ts)+'.',
+        nota:'O próprio KDIGO lembra (2.1.2) que pequenas flutuações da TFG são comuns e não '+
+             'significam progressão por si. Vale pela tendência sustentada, não por um ponto.',
+        fonte:'KDIGO 2012, item 2.1.3: progressão rápida é queda sustentada da TFG maior que '+
+              '5 mL/min/1,73 m² por ano.'});
+    }
+    var p=s[0].out.serie, u=s[s.length-1].out.serie;
+    var queda=(p-u)/p*100;
+    var g0=estagioG(p), g1=estagioG(u);
+    if(queda>=25&&g0.c!==g1.c){
+      out.push({grau:'alerta',sis:'renal',
+        titulo:'Queda da TFG com mudança de categoria',
+        conta:'a TFG foi de '+numBR(p,0)+' ('+g0.c+') para '+numBR(u,0)+' ('+g1.c+') mL/min/1,73 m², '+
+              'queda de '+numBR(queda,0)+'% em '+emDias(s[s.length-1].ts-s[0].ts)+'.',
+        fonte:'KDIGO 2012, item 2.1.3: queda relevante é mudança de categoria de TFG acompanhada '+
+              'de queda de 25% ou mais em relação à basal.'});
+    }
+    return out;
+  }
+
+  /* ---- o que mudou em cada sistema, sem julgar --------------------- */
+  function achadosVariacao(){
+    var out=[];
+    Object.keys(SYS).forEach(function(id){
+      var s=serieSis(id).filter(function(h){return h.out&&h.out.serie!=null&&!isNaN(h.out.serie);});
+      if(s.length<2)return;
+      var a=s[s.length-2], b=s[s.length-1];
+      var rot=(b.out.principal&&b.out.principal.rot)||id;
+      var un=(b.out.principal&&b.out.principal.un)||'';
+      var dv=b.out.serie-a.out.serie;
+      if(Math.abs(dv)<1e-9)return;
+      var pct=a.out.serie!==0?(dv/Math.abs(a.out.serie)*100):null;
+      out.push({grau:'info',sis:id,
+        titulo:rot+(dv>0?' subiu':' caiu'),
+        conta:numBR(a.out.serie,1)+' → '+numBR(b.out.serie,1)+(un?(' '+un):'')+
+              (pct!=null?(' ('+(dv>0?'+':'−')+numBR(Math.abs(pct),0)+'%)'):'')+
+              ', em '+emDias(b.ts-a.ts)+'.'});
+    });
+    return out;
+  }
+
+  function analiseLongitudinal(){
+    var L=[];
+    try{var a=achadoLRA(); if(a)L.push(a);}catch(e){}
+    try{L=L.concat(achadosDRC());}catch(e){}
+    try{L=L.concat(achadosVariacao());}catch(e){}
+    var ordem={alerta:0,atencao:1,info:2};
+    L.sort(function(x,y){return ordem[x.grau]-ordem[y.grau];});
+    return L;
+  }
+
+  function renderAnalise(){
+    var box=el('analiseBox'); if(!box)return;
+    var L=analiseLongitudinal();
+    if(!L.length){
+      box.innerHTML='<p class="note">Ainda não há medidas repetidas suficientes para comparar. '+
+        'A partir do segundo registro de um sistema, o que mudou aparece aqui.</p>';
+      return;
+    }
+    box.innerHTML=L.map(function(a){
+      return '<div class="anitem '+a.grau+'">'+
+        '<div class="anh">'+esc(a.titulo)+(a.quando?('<span class="anq">'+esc(a.quando)+'</span>'):'')+'</div>'+
+        '<div class="anc">'+esc(a.conta)+'</div>'+
+        (a.nota?('<div class="ann">'+esc(a.nota)+'</div>'):'')+
+        (a.fonte?('<div class="anf">'+esc(a.fonte)+'</div>'):'')+
+        '</div>';
+    }).join('')+
+    '<p class="note">Isto compara números que você registrou e mostra a conta de cada um. '+
+    '<b>Não é diagnóstico e não substitui a sua leitura</b> — atender a um critério não é ter a doença.</p>';
+  }
   function renderHistory(){
+    try{renderAnalise();}catch(e){}
     var avail=Object.keys(SYS).filter(function(id){return numLog(id).length>=1;});
     if(avail.indexOf(selectedChart)<0)selectedChart=avail[0]||null;
     el('chartSel').innerHTML=avail.map(function(id){return '<button data-c="'+id+'" class="'+(id===selectedChart?'on':'')+'">'+SYS[id].fr+'</button>';}).join('')||'<span class="chartempty" style="padding:0">Nenhuma medição numérica ainda.</span>';
@@ -5748,7 +5915,7 @@ window.addEventListener('error',function(e){
      ficou invisivel por causa disto.
      A marca sobe junto com a versao; quando ela muda, o endereco muda, e
      o navegador e obrigado a buscar de novo.                            */
-  var ASSET_V='40';
+  var ASSET_V='41';
   function comVersao(u){return u+(u.indexOf('?')>=0?'&':'?')+'v='+ASSET_V;}
   var CORPO_ARQ='corpo.glb';
   var CORPO_CHAVE=null;      /* qual tipo de corpo esta carregado */
@@ -6705,8 +6872,8 @@ window.addEventListener('error',function(e){
     addBody(hbody,P);linearizeMats(hbody);hZoom=9.6*(P.scale||1);
     loadInto(hbody,P,true,function(ok,info){
       var vt=document.querySelector('.vtag');
-      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 40 · corpo anatômico ✓';}
-      else if(vt)vt.textContent='versão 40 · avatar reserva (modelo não carregou)';
+      if(ok){clearGroup(hbody);hbody.add(info.root);homeRoot=info.root;hMixer=info.mixer;hZoom=9.6;if(vt)vt.textContent='versão 41 · corpo anatômico ✓';}
+      else if(vt)vt.textContent='versão 41 · avatar reserva (modelo não carregou)';
     });
   }
   function resizeHome(){if(!hren||!hhost)return;var w=hhost.clientWidth||320,h=hhost.clientHeight||300;hren.setSize(w,h);hcam.aspect=w/h;hcam.updateProjectionMatrix();}
